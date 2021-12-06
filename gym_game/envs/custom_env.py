@@ -9,3 +9,9 @@ class CustomEnv(gym.Env):
         self.game = connect_four()
         self.action_space = spaces.Discrete(self.game.columns)
         self.observation_space = spaces.Box(low = -1,high = 1,shape = (self.game.rows,self.game.columns), dtype = np.int0)
+
+    def reset(self):
+        del self.game
+        self.game = connect_four()
+        obs = self.game.observe()
+        return obs
