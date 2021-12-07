@@ -1,17 +1,5 @@
 import pygame as pg
-import numpy as np
-
-
-class piece():
-    def __init__(self, _radius, _color):
-        self.radius = _radius
-        self.color = _color
-
-    def place(self, x: int, y: int):
-        '''
-        Function that creates the cirkel with the specified color at location x,y
-        '''
-    
+import numpy as np 
 
 class connect_four():
     def __init__(self, game_size: int):
@@ -49,15 +37,16 @@ class connect_four():
         
         pg.display.update()
 
-    def display_board(self) -> None:
+    def return_board(self) -> None:
         '''
-        Prints the current state of the board
+        Returns the current state of the board
         '''
-        print(np.flip(self.board, 0))
+        return np.flip(self.board, 0)
     
     def is_legal(self, column: int) -> bool:
         '''
-        Checks for legal move
+        Checks for legal move returns a boolean
+        Returns true if the move was legal and false if not
         '''
         return self.board[self.rows-1][column] == 0
 
@@ -75,6 +64,7 @@ class connect_four():
     def winning_move(self) -> bool:
         '''
         Checks if the board has a winner and returns boolean
+        Returns true if player a player made the winning move and false if not
         '''
         #Check horizontal locations for win
         for c in range(self.columns-3):
@@ -118,6 +108,7 @@ class connect_four():
     def is_tie(self) -> bool:
         '''
         Checks if the game is a tie, returns a boolean
+        Returns true if the game is a tie, and false if not
         '''
         return all([val != 0 for val in self.board[self.rows-1]])
 
@@ -133,3 +124,13 @@ class connect_four():
         Restarts the game by setting all entries in board to 0
         '''
         self.board *= 0
+    
+    def is_done(self, action: int) -> bool:
+        '''
+        Checks if the game is done and returns a boolean.
+        The game can end in three ways:
+            1. If the player makes the winning move
+            2. If the player makes a move that ties the players
+            3. If the player makes an illegal move
+        '''
+        pass
