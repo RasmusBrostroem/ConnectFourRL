@@ -30,10 +30,10 @@ class CustomEnv(gym.Env):
             - reward: the reward for the player to choose the given action
             - done: boolean that tells if the game is over or not
         '''
+        reward = self.game.evaluate(action, player)
+        done = self.game.is_done(action)
         self.game.place_piece(action, player)
         obs = self.game.return_board()
-        reward = self.game.evaluate()
-        done = self.game.is_done()
         return obs, reward, done, {}
 
     def render(self, mode="human", close=False):
