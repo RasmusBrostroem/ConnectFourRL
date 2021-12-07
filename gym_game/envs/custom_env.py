@@ -1,14 +1,13 @@
 import gym
 from gym import spaces
 import numpy as np
-from numpy.core.fromnumeric import shape
 from gym_game.envs.connectFour import connect_four
 
 class CustomEnv(gym.Env):
     def __init__(self) -> None:
         self.game = connect_four()
         self.action_space = spaces.Discrete(self.game.columns)
-        self.observation_space = spaces.Box(low = -1,high = 1,shape = (self.game.rows,self.game.columns), dtype = np.int0)
+        self.observation_space = spaces.Box(low = -1, high = 1, shape = (self.game.rows,self.game.columns), dtype = np.int0)
 
     def reset(self):
         '''
@@ -16,7 +15,7 @@ class CustomEnv(gym.Env):
         '''
         del self.game
         self.game = connect_four()
-        obs = self.game.observe()
+        obs = self.game.return_board()
         return obs
     
     def step(self, action: int, player: int):
@@ -32,7 +31,7 @@ class CustomEnv(gym.Env):
             - done: boolean that tells if the game is over or not
         '''
         self.game.place_piece(action, player)
-        obs = self.game.observe()
+        obs = self.game.return_board()
         reward = self.game.evaluate()
         done = self.game.is_done()
         return obs, reward, done, {}
@@ -41,4 +40,4 @@ class CustomEnv(gym.Env):
         '''
         Renders the current state of the game, so the viewer can watch the game play out
         '''
-        self.game.display_board()
+        self.game.draw_board()

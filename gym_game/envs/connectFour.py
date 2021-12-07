@@ -1,17 +1,5 @@
 import pygame as pg
-import numpy as np
-
-
-class piece():
-    def __init__(self, _radius, _color):
-        self.radius = _radius
-        self.color = _color
-
-    def place(self, x: int, y: int):
-        '''
-        Function that creates the cirkel with the specified color at location x,y
-        '''
-    
+import numpy as np 
 
 class connect_four():
     def __init__(self, game_size: int):
@@ -49,11 +37,11 @@ class connect_four():
         
         pg.display.update()
 
-    def display_board(self) -> None:
+    def return_board(self) -> None:
         '''
-        Prints the current state of the board
+        Returns the current state of the board
         '''
-        print(np.flip(self.board, 0))
+        return np.flip(self.board, 0)
     
     def is_legal(self, column: int) -> bool:
         '''

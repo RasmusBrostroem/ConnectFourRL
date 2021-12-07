@@ -1,4 +1,4 @@
-import connectFour
+import gym_game.envs.connectFour as connectFour
 import agent
 
 import torch
