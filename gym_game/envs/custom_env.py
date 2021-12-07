@@ -32,8 +32,8 @@ class CustomEnv(gym.Env):
         '''
         legal = self.game.is_legal(action)
         self.game.place_piece(action, player)
-        reward = self.game.evaluate(action, player, legal)
-        done = self.game.is_done(action, legal)
+        reward = self.game.evaluate(player, legal)
+        done = self.game.is_done(legal)
         obs = self.game.return_board()
         return obs, reward, done, {}
 

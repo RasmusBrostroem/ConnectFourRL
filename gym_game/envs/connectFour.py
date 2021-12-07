@@ -2,13 +2,19 @@ import pygame as pg
 import numpy as np 
 
 class connect_four():
-    def __init__(self, game_size: int):
+    def __init__(self):
         # The attributes to display the game
-        self.size = game_size
+        self.size = 1000
         self.rows = 6
         self.columns = 7
 
         self.board = np.zeros((6,7))
+
+        #Evaluate attributes
+        self.win = 1
+        self.lose = -1
+        self.tie = 0.5
+        self.illegal = -5
     
     def draw_board(self):
         '''
@@ -125,7 +131,7 @@ class connect_four():
         '''
         self.board *= 0
     
-    def is_done(self, action: int) -> bool:
+    def is_done(self, legal: bool) -> bool:
         '''
         Checks if the game is done and returns a boolean.
         The game can end in three ways:
@@ -133,4 +139,30 @@ class connect_four():
             2. If the player makes a move that ties the players
             3. If the player makes an illegal move
         '''
-        pass
+        return self.winning_move() or self.is_tie() or not legal
+    
+    def evaluate(self, player: int, legal: bool):
+        '''
+        Evaluates current state and returns a reward. Note: only makes sense for player with id 1.
+        The reward is based on the system the evaluate attributes
+
+        Input
+            - player (int): Which player is evaluated
+            - legal (bool): if the move leading to this state was legal
+        Output
+            - Reward (float): One of the evaluate attributes or 0 if the game
+                                wasn't decided on previous move
+        '''
+        if not legal:
+            return self.illegal
+        elif self.winning_move():
+            if player == 1:
+                return self.win
+            else:
+                return self.lose
+        elif self.is_tie():
+            return self.tie
+        else:
+            return 0
+
+
