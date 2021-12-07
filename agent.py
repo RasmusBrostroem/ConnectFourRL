@@ -17,10 +17,8 @@ Reward function is built based on these point systems:
 '''
 
 import torch
-from torch._C import device
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Variable
 from torch.distributions import Categorical
 
 
@@ -32,6 +30,7 @@ class DirectPolicyAgent(nn.Module):
         self.L3 = nn.Linear(200, 7)
 
         self.device = device
+        self.gamma = 0.99
 
         self.saved_log_probs = []
         self.rewards = []
@@ -45,6 +44,7 @@ class DirectPolicyAgent(nn.Module):
         return F.softmax(x, dim=0)
 
     def select_action(self, x):
+        x = x.copy()
         x = torch.from_numpy(x).float().flatten()
         x = x.to(self.device)
         probs = self.foward(x)
@@ -53,3 +53,13 @@ class DirectPolicyAgent(nn.Module):
 
         self.saved_log_probs.append(m.log_prob(action))
         return action
+
+    def calculate_rewards(self):
+        final_reward = self.rewards[-1]
+        for i, val in enumerate(reversed(self.rewards)):
+            if val != 0 and i != 0:
+                break
+
+            weighted_reward = self.gamma**i * final_reward
+            self.rewards[len(self.rewards)-(i+1)] = weighted_reward
+
