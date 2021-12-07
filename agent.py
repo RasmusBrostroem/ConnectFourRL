@@ -26,11 +26,11 @@ class DirectPolicyAgent(nn.Module):
     def __init__(self, device):
         super(DirectPolicyAgent, self).__init__()
         self.L1 = nn.Linear(42, 100)
-        self.L2 = nn.Linear(100, 200)
-        self.L3 = nn.Linear(200, 7)
+        self.L2 = nn.Linear(100, 100)
+        self.L3 = nn.Linear(100, 7)
 
         self.device = device
-        self.gamma = 0.99
+        self.gamma = 0.90
 
         self.saved_log_probs = []
         self.rewards = []
