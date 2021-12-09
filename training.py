@@ -47,6 +47,9 @@ games_final_rewards = []
 episode = 0
 show = False
 
+def play_game(env, agent, opponent = None, show_game = False):
+    pass
+
 while True:
     s = env.reset()
     env.configurePlayer(random.choice([-1,1]))
@@ -126,4 +129,3 @@ while True:
         del losses[:]
 
     episode += 1
-
