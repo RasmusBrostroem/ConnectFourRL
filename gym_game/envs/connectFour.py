@@ -4,7 +4,7 @@ import numpy as np
 class connect_four():
     def __init__(self):
         # The attributes to display the game
-        self.size = 600
+        self.size = 700
         self.rows = 6
         self.columns = 7
 
@@ -16,7 +16,7 @@ class connect_four():
         self.tie = 50
         self.illegal = 100000
     
-    def draw_board(self):
+    def draw_board(self, reward):
         '''
         Draws the current state of the board
         '''
@@ -29,6 +29,8 @@ class connect_four():
         square_size = np.ceil(self.size/self.columns)
         radius = int(square_size/2-5)
         flipped_board = np.flip(self.board,0)
+
+        # Draw the squares and pieces
         for r in range(self.rows):
             for c in range(self.columns):
                 pg.draw.rect(screen, blue, (c*square_size, r*square_size+square_size, square_size, square_size))
@@ -41,6 +43,32 @@ class connect_four():
                 else:
                     pg.draw.circle(screen, red, (circle_x_center, circle_y_center), radius)
         
+        # Draw the result if there is one
+        if reward == self.win:
+            text = "Agent won!"
+            font_size = min(((self.size-10)/len(text)/0.6), square_size/1.16)
+            myfont = pg.font.SysFont("monospace", int(font_size))
+            label = myfont.render(text, 1, yellow)
+            screen.blit(label, (self.size/2-label.get_width()/2,square_size/2-label.get_height()/2))
+        elif reward == self.lose:
+            text = "Agent lost!"
+            font_size = min(((self.size-10)/len(text)/0.6), square_size/1.16)
+            myfont = pg.font.SysFont("monospace", int(font_size))
+            label = myfont.render(text, 1, red)
+            screen.blit(label, (self.size/2-label.get_width()/2,square_size/2-label.get_height()/2))
+        elif reward == self.tie:
+            text = "TIE!"
+            font_size = min(((self.size-10)/len(text)/0.6), square_size/1.16)
+            myfont = pg.font.SysFont("monospace", int(font_size))
+            label = myfont.render(text, 1, blue)
+            screen.blit(label, (self.size/2-label.get_width()/2,square_size/2-label.get_height()/2))
+        elif reward == self.illegal:
+            text = "Agent illegal move!"
+            font_size = min(((self.size-10)/len(text)/0.6), square_size/1.16)
+            myfont = pg.font.SysFont("monospace", int(font_size))
+            label = myfont.render(text, 1, red)
+            screen.blit(label, (self.size/2-label.get_width()/2,square_size/2-label.get_height()/2))
+
         pg.display.update()
 
     def return_board(self) -> None:
