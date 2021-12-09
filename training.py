@@ -1,8 +1,11 @@
 import numpy as np
 import gym
+from pygame.constants import K_ESCAPE, KEYDOWN
 import gym_game
 import pygame as pg
 import os
+import sys
+import keyboard
 
 import torch
 import torch.optim as optim
@@ -15,11 +18,11 @@ device = 'cpu'
 agent = DirectPolicyAgent(device)
 agent.to(device)
 
-#pg.init()
+pg.init()
 
 # Parameters
 generations = 10
-episodes_per_gen = 100000 # Episodes before new generation
+episodes_per_gen = 10000 # Episodes before new generation
 batch_size = 10 #Episodes before param update
 learning_rate = 0.0001 # Learning rate
 decay_rate = 0.99 # Weight decay for Adam optimizer
@@ -43,7 +46,12 @@ win_rate = []
 losses = []
 games_final_rewards = []
 
-for episode in range(episodes_per_gen):
+episode = 0
+
+while True:
+    if keyboard.is_pressed("Esc"):
+        sys.exit()
+
     s = env.reset()
     env.configurePlayer(random.choice([-1,1]))
     
@@ -75,9 +83,9 @@ for episode in range(episodes_per_gen):
     if episode % batch_size == 0:
         loss = []
         for log_prob, reward in zip(agent.saved_log_probs, agent.rewards):
-            loss.append(log_prob * reward)
+            loss.append(-log_prob * reward)
         
-        loss = torch.stack(loss).sum()
+        loss = torch.stack(loss).mean()
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -95,7 +103,7 @@ for episode in range(episodes_per_gen):
 
         #print(f'Reinforce ep {episode} done. Winrate: {np.mean(wins)}. Loss: {loss.detach().numpy()}')
 
-    if episode % 1000 == 0:
+    if episode % 20000 == 0:
         # Calculating win percentage
         wins = [game_r == 1 for game_r in games_final_rewards]
         win_rate.append(np.mean(wins))
@@ -103,4 +111,6 @@ for episode in range(episodes_per_gen):
         del games_final_rewards[:]
 
         print(f'Reinforce ep {episode} done. Winrate: {np.mean(wins)}.')
+    
+    episode += 1
 

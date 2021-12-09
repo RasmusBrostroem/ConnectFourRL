@@ -12,7 +12,7 @@ class connect_four():
 
         #Evaluate attributes
         self.win = 1
-        self.lose = -1
+        self.lose = 0
         self.tie = 0.5
         self.illegal = -5
     

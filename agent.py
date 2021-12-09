@@ -2,7 +2,7 @@
 '''
 Tic-tac-toe with policy gradient desent
 https://medium.com/@carsten.friedrich/part-8-tic-tac-toe-with-policy-gradient-descent-da2496defc45
-
+https://spinningup.openai.com/en/latest/spinningup/rl_intro3.html
 '''
 
 '''
@@ -20,6 +20,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical
+import numpy as np
 
 
 class DirectPolicyAgent(nn.Module):
