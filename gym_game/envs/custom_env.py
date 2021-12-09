@@ -40,11 +40,12 @@ class CustomEnv(gym.Env):
         obs = self.game.return_board()
         return obs, reward, done, {}
 
-    def render(self, mode="human", close=False):
+    def render(self, reward = 0, mode="human", close=False):
         '''
         Renders the current state of the game, so the viewer can watch the game play out
         '''
-        self.game.draw_board()
+        self.game.draw_board(reward)
+        pg.time.wait(1000)
     
     def configurePlayer(self, newPlayer):
         self.player = newPlayer

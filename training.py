@@ -63,7 +63,6 @@ while True:
     while True:
         if show:
             env.render()
-            pg.time.wait(1000)
     
         if keyboard.is_pressed("n"):
             show = False
@@ -78,10 +77,12 @@ while True:
         s, r, done, _ = env.step(action)
 
         if done:
+            if show:
+                env.render(r)
+                
             agent.rewards.append(r)
             agent.calculate_rewards()
             games_final_rewards.append(r)
-            #print(r)
             break
         elif env.player == 1:
             agent.rewards.append(r)
