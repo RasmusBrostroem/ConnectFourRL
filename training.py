@@ -1,7 +1,5 @@
 import numpy as np
 import gym
-from pygame.constants import K_ESCAPE, KEYDOWN
-import gym_game
 import pygame as pg
 import os
 import sys
