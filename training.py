@@ -51,7 +51,8 @@ def play_game(env, agent, opponent = None, show_game = False):
             choices = env.game.legal_cols()
             action = random.choice(choices)
         elif env.player == -1 and opponent is not None:
-            action = opponent.select_action(s)
+            with torch.no_grad():
+                action = opponent.select_action(s)
         else:
             action = agent.select_action(s)
 
@@ -85,11 +86,22 @@ def update_agent(agent, optimizer):
 
     return loss.detach().numpy()
 
-def train_agent(env, agent, optimizer, generations, episodes_per_gen, batchsize, opponent = None, print_every = 1000, show_every = 1000):
+def train_agent(env, agent, optimizer, generations, episodes_per_gen, batchsize, path_name = ["",""], print_every = 1000, show_every = 1000):
     losses = []
     games_final_rewards = []
 
+    path, name = path_name
+
     for gen in range(1,generations+1):
+        opponent_name = name + f"_gen_{gen-1}.pth"
+        opponent_path = os.path.join(path, opponent_name)
+        if os.path.isfile(opponent_path):
+            print(f"Loading generation {gen-1}")
+            opponent = DirectPolicyAgent(device)
+            opponent.train(False)
+            opponent = torch.load(opponent_path)
+        else:
+            opponent = None
 
         for ep in range(1,episodes_per_gen+1):
             if keyboard.is_pressed("Esc"):
@@ -114,7 +126,11 @@ def train_agent(env, agent, optimizer, generations, episodes_per_gen, batchsize,
 
                 del games_final_rewards[:]
                 del losses[:]
-
+        
+        # Saving the model as a new generation is beginning
+        agent_name = name + f"_gen_{gen}.pth"
+        agent_path = os.path.join(path, agent_name)
+        torch.save(agent, agent_path)
 
 if __name__ == "__main__":
-    train_agent(env, agent, optimizer, generations, episodes_per_gen, batch_size)
+    train_agent(env, agent, optimizer, generations, episodes_per_gen, batch_size, ["C:\Projects\ConnectFourRL\AgentParameters", "StackerBoi"])
