@@ -4,17 +4,17 @@ import numpy as np
 class connect_four():
     def __init__(self):
         # The attributes to display the game
-        self.size = 1000
+        self.size = 600
         self.rows = 6
         self.columns = 7
 
         self.board = np.zeros((6,7))
 
         #Evaluate attributes
-        self.win = 1
-        self.lose = 0
-        self.tie = 0.5
-        self.illegal = -5
+        self.win = -10
+        self.lose = 500
+        self.tie = 50
+        self.illegal = 100000
     
     def draw_board(self):
         '''

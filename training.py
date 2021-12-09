@@ -23,8 +23,8 @@ pg.init()
 # Parameters
 generations = 10
 episodes_per_gen = 10000 # Episodes before new generation
-batch_size = 10 #Episodes before param update
-learning_rate = 0.0001 # Learning rate
+batch_size = 1 #Episodes before param update
+learning_rate = 0.001 # Learning rate
 decay_rate = 0.99 # Weight decay for Adam optimizer
 
 # Optimizer
@@ -47,19 +47,27 @@ losses = []
 games_final_rewards = []
 
 episode = 0
+show = False
 
 while True:
-    if keyboard.is_pressed("Esc"):
-        sys.exit()
-
     s = env.reset()
     env.configurePlayer(random.choice([-1,1]))
-    
+
+    if keyboard.is_pressed("Esc"):
+            sys.exit()
+
+    if keyboard.is_pressed("t"):
+        show = True
+        
     # Playing a game
     while True:
-        # if episode % 1000 == 0:
-        #     env.render()
-        #     pg.time.wait(1000)
+        if show:
+            env.render()
+            pg.time.wait(1000)
+    
+        if keyboard.is_pressed("n"):
+            show = False
+            pg.display.quit()
     
         if env.player == -1:
             choices = env.game.legal_cols()
@@ -81,9 +89,14 @@ while True:
         env.configurePlayer(env.player * -1)
     
     if episode % batch_size == 0:
+        # # Output agent parameters
+        # for param in agent.parameters():
+        #     print(param.data)
+        #     break
+
         loss = []
         for log_prob, reward in zip(agent.saved_log_probs, agent.rewards):
-            loss.append(-log_prob * reward)
+            loss.append((-log_prob+1) * reward)
         
         loss = torch.stack(loss).mean()
         optimizer.zero_grad()
@@ -103,14 +116,16 @@ while True:
 
         #print(f'Reinforce ep {episode} done. Winrate: {np.mean(wins)}. Loss: {loss.detach().numpy()}')
 
-    if episode % 20000 == 0:
+    if episode % 1000 == 0:
         # Calculating win percentage
-        wins = [game_r == 1 for game_r in games_final_rewards]
+        wins = [game_r == env.game.win for game_r in games_final_rewards]
         win_rate.append(np.mean(wins))
+        illegals = [game_r == env.game.illegal for game_r in games_final_rewards]
+
+        print(f'Reinforce ep {episode} done. Winrate: {np.mean(wins)}. Illegal move rate: {np.mean(illegals)}. Average Loss: {np.mean(losses)}')
 
         del games_final_rewards[:]
+        del losses[:]
 
-        print(f'Reinforce ep {episode} done. Winrate: {np.mean(wins)}.')
-    
     episode += 1
 
