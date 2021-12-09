@@ -1,6 +1,7 @@
 import numpy as np
 import gym
 import pygame as pg
+import gym_game
 import os
 import sys
 import keyboard
