@@ -21,7 +21,7 @@ pg.init()
 
 # Parameters
 generations = 10
-episodes_per_gen = 500 # Episodes before new generation
+episodes_per_gen = 5000 # Episodes before new generation
 batch_size = 5 #Episodes before param update
 learning_rate = 0.001 # Learning rate
 decay_rate = 0.99 # Weight decay for Adam optimizer
@@ -31,13 +31,6 @@ optimizer = optim.Adam(agent.parameters(), lr=learning_rate, weight_decay=decay_
 
 # Environment
 env = gym.make('ConnectFour-v0')
-
-# Main training loop
-# for gen in range(generations):
-#     model_save_path = 'AgentParameters/agent_params'+gen+'.pkl'
-#     if os.path.isfile(model_save_path):
-#         print('Loading model parameters')
-
 
 def play_game(env, agent, opponent = None, show_game = False):
     s = env.reset()
@@ -70,17 +63,23 @@ def play_game(env, agent, opponent = None, show_game = False):
                 pg.display.quit()
                 
             agent.rewards.append(r)
-            agent.calculate_rewards()
+            agent.game_succes.append(None)
+            agent.calculate_rewards(env)
             return r
         elif env.player == 1:
             agent.rewards.append(r)
+            agent.game_succes.append(None)
 
         env.configurePlayer(env.player * -1)
 
 def update_agent(agent, optimizer):
-    loss = []
-    for log_prob, reward in zip(agent.saved_log_probs, agent.rewards):
-        loss.append(-log_prob * reward)
+    # loss = []
+    # for log_prob, reward in zip(agent.saved_log_probs, agent.rewards):
+    #     loss.append(-log_prob * reward)
+
+    loss = [-log_prob*reward if succes else -torch.log(1-prob)*reward
+            for log_prob, reward, prob, succes 
+            in zip(agent.saved_log_probs, agent.rewards, agent.probs, agent.game_succes)]
     
     loss = torch.stack(loss).mean()
     optimizer.zero_grad()
@@ -89,6 +88,8 @@ def update_agent(agent, optimizer):
 
     del agent.rewards[:]
     del agent.saved_log_probs[:]
+    del agent.game_succes[:]
+    del agent.probs[:]
 
     return loss.detach().numpy()
 
@@ -139,4 +140,4 @@ def train_agent(env, agent, optimizer, generations, episodes_per_gen, batchsize,
         torch.save(agent, agent_path)
 
 if __name__ == "__main__":
-    train_agent(env, agent, optimizer, generations, episodes_per_gen, batch_size, ["C:\Projects\ConnectFourRL\AgentParameters", "StackerBoi"], print_every=500, show_every=500)
+    train_agent(env, agent, optimizer, generations, episodes_per_gen, batch_size, ["C:\Projects\ConnectFourRL\AgentParameters", "StackerBoi"])
