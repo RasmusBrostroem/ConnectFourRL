@@ -35,6 +35,8 @@ class DirectPolicyAgent(nn.Module):
         self.gamma = 0.90
 
         self.saved_log_probs = []
+        self.game_succes = [] # True if win or tie, false if lose or illegal
+        self.probs = []
         self.rewards = []
     
     def foward(self, x):
@@ -56,14 +58,19 @@ class DirectPolicyAgent(nn.Module):
         action = m.sample()
 
         self.saved_log_probs.append(m.log_prob(action))
+        self.probs.append(probs[action])
         return action
 
-    def calculate_rewards(self):
+    def calculate_rewards(self, env):
         final_reward = self.rewards[-1]
         for i, val in enumerate(reversed(self.rewards)):
             if val != 0 and i != 0:
                 break
-
+            
             weighted_reward = self.gamma**i * final_reward
             self.rewards[len(self.rewards)-(i+1)] = weighted_reward
+            if final_reward == env.game.lose or final_reward == env.game.illegal:
+                self.game_succes[len(self.rewards)-(i+1)] = False
+            else:
+                self.game_succes[len(self.rewards)-(i+1)] = True
 

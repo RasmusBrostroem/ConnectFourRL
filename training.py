@@ -63,17 +63,23 @@ def play_game(env, agent, opponent = None, show_game = False):
                 pg.display.quit()
                 
             agent.rewards.append(r)
-            agent.calculate_rewards()
+            agent.game_succes.append(None)
+            agent.calculate_rewards(env)
             return r
         elif env.player == 1:
             agent.rewards.append(r)
+            agent.game_succes.append(None)
 
         env.configurePlayer(env.player * -1)
 
 def update_agent(agent, optimizer):
-    loss = []
-    for log_prob, reward in zip(agent.saved_log_probs, agent.rewards):
-        loss.append(-log_prob * reward)
+    # loss = []
+    # for log_prob, reward in zip(agent.saved_log_probs, agent.rewards):
+    #     loss.append(-log_prob * reward)
+
+    loss = [-log_prob*reward if succes else -torch.log(1-prob)*reward
+            for log_prob, reward, prob, succes 
+            in zip(agent.saved_log_probs, agent.rewards, agent.probs, agent.game_succes)]
     
     loss = torch.stack(loss).mean()
     optimizer.zero_grad()
@@ -82,6 +88,8 @@ def update_agent(agent, optimizer):
 
     del agent.rewards[:]
     del agent.saved_log_probs[:]
+    del agent.game_succes[:]
+    del agent.probs[:]
 
     return loss.detach().numpy()
 
