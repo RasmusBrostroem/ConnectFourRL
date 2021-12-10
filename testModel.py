@@ -1,4 +1,3 @@
-from keyboard import play
 import torch
 import pygame as pg
 import gym
