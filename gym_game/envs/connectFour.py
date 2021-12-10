@@ -12,9 +12,9 @@ class connect_four():
 
         #Evaluate attributes
         self.win = 1
-        self.lose = 50
-        self.tie = 20
-        self.illegal = 1000
+        self.lose = 5000
+        self.tie = 2000
+        self.illegal = 100000
     
     def draw_board(self, reward):
         '''
