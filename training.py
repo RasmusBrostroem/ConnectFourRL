@@ -21,10 +21,10 @@ pg.init()
 
 # Parameters
 generations = 10
-episodes_per_gen = 5000 # Episodes before new generation
-batch_size = 5 #Episodes before param update
+episodes_per_gen = 10000 # Episodes before new generation
+batch_size = 10 #Episodes before param update
 learning_rate = 0.001 # Learning rate
-decay_rate = 0.99 # Weight decay for Adam optimizer
+decay_rate = 0.01 # Weight decay for Adam optimizer
 
 # Optimizer
 optimizer = optim.Adam(agent.parameters(), lr=learning_rate, weight_decay=decay_rate)
@@ -39,21 +39,14 @@ def play_game(env, agent, opponent = None, show_game = False):
     while True:
         if show_game:
             env.render()
-
+        choices = env.game.legal_cols()
         if env.player == -1 and opponent is None:
-            choices = env.game.legal_cols()
             action = random.choice(choices)
         elif env.player == -1 and opponent is not None:
-            choices = env.game.legal_cols()
             with torch.no_grad():
-                for i in range(10):
-                    action = opponent.select_action(s)
-                    if action in choices:
-                        break
-                    elif i == 9:
-                        action = random.choice(choices)
+                action = opponent.select_action(s, choices)
         else:
-            action = agent.select_action(s)
+            action = agent.select_action(s, choices)
 
         s, r, done, _ = env.step(action)
 
@@ -73,15 +66,15 @@ def play_game(env, agent, opponent = None, show_game = False):
         env.configurePlayer(env.player * -1)
 
 def update_agent(agent, optimizer):
-    # loss = []
-    # for log_prob, reward in zip(agent.saved_log_probs, agent.rewards):
-    #     loss.append(-log_prob * reward)
+    loss = []
+    for log_prob, reward in zip(agent.saved_log_probs, agent.rewards):
+        loss.append(-log_prob * reward)
 
-    loss = [-log_prob*reward if succes else -torch.log(1-prob)*reward
-            for log_prob, reward, prob, succes 
-            in zip(agent.saved_log_probs, agent.rewards, agent.probs, agent.game_succes)]
+    # loss = [-log_prob*reward if succes else -torch.log(1-prob)*reward
+    #         for log_prob, reward, prob, succes 
+    #         in zip(agent.saved_log_probs, agent.rewards, agent.probs, agent.game_succes)]
     
-    loss = torch.stack(loss).mean()
+    loss = torch.stack(loss).sum()
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
@@ -121,7 +114,7 @@ def train_agent(env, agent, optimizer, generations, episodes_per_gen, batchsize,
             
             games_final_rewards.append(final_reward)
 
-            if ep*gen % batchsize == 0:
+            if ep % batchsize == 0:
                 loss = update_agent(agent, optimizer)
                 losses.append(loss)
             
