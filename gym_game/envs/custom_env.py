@@ -45,7 +45,7 @@ class CustomEnv(gym.Env):
         Renders the current state of the game, so the viewer can watch the game play out
         '''
         self.game.draw_board(reward)
-        pg.time.wait(1000)
+        pg.time.wait(500)
     
     def configurePlayer(self, newPlayer):
         self.player = newPlayer
