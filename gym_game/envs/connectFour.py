@@ -14,7 +14,7 @@ class connect_four():
         self.win = -10
         self.lose = 500
         self.tie = 50
-        self.illegal = 100000
+        self.illegal = 1000
     
     def draw_board(self, reward):
         '''
