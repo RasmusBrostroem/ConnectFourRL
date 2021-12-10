@@ -20,9 +20,9 @@ agent.to(device)
 pg.init()
 
 # Parameters
-generations = 3
-episodes_per_gen = 1000 # Episodes before new generation
-batch_size = 10 #Episodes before param update
+generations = 10
+episodes_per_gen = 500 # Episodes before new generation
+batch_size = 5 #Episodes before param update
 learning_rate = 0.001 # Learning rate
 decay_rate = 0.99 # Weight decay for Adam optimizer
 
@@ -51,8 +51,14 @@ def play_game(env, agent, opponent = None, show_game = False):
             choices = env.game.legal_cols()
             action = random.choice(choices)
         elif env.player == -1 and opponent is not None:
+            choices = env.game.legal_cols()
             with torch.no_grad():
-                action = opponent.select_action(s)
+                for i in range(10):
+                    action = opponent.select_action(s)
+                    if action in choices:
+                        break
+                    elif i == 9:
+                        action = random.choice(choices)
         else:
             action = agent.select_action(s)
 
@@ -133,4 +139,4 @@ def train_agent(env, agent, optimizer, generations, episodes_per_gen, batchsize,
         torch.save(agent, agent_path)
 
 if __name__ == "__main__":
-    train_agent(env, agent, optimizer, generations, episodes_per_gen, batch_size, ["C:\Projects\ConnectFourRL\AgentParameters", "StackerBoi"])
+    train_agent(env, agent, optimizer, generations, episodes_per_gen, batch_size, ["C:\Projects\ConnectFourRL\AgentParameters", "StackerBoi"], print_every=500, show_every=500)
