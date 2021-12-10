@@ -21,6 +21,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical
 import numpy as np
+import random
 
 
 class DirectPolicyAgent(nn.Module):
@@ -32,7 +33,7 @@ class DirectPolicyAgent(nn.Module):
         self.final = nn.Linear(100, 7)
 
         self.device = device
-        self.gamma = 0.90
+        self.gamma = 0.95
 
         self.saved_log_probs = []
         self.game_succes = [] # True if win or tie, false if lose or illegal
@@ -49,13 +50,15 @@ class DirectPolicyAgent(nn.Module):
         x = self.final(x)
         return F.softmax(x, dim=0)
 
-    def select_action(self, x):
+    def select_action(self, x, legal_moves):
         x = x.copy()
         x = torch.from_numpy(x).float().flatten()
         x = x.to(self.device)
         probs = self.foward(x)
         m = Categorical(probs)
         action = m.sample()
+        if action not in legal_moves:
+            action = torch.tensor(random.choice(legal_moves))
 
         self.saved_log_probs.append(m.log_prob(action))
         self.probs.append(probs[action])
