@@ -32,13 +32,6 @@ optimizer = optim.Adam(agent.parameters(), lr=learning_rate, weight_decay=decay_
 # Environment
 env = gym.make('ConnectFour-v0')
 
-# Main training loop
-# for gen in range(generations):
-#     model_save_path = 'AgentParameters/agent_params'+gen+'.pkl'
-#     if os.path.isfile(model_save_path):
-#         print('Loading model parameters')
-
-
 def play_game(env, agent, opponent = None, show_game = False):
     s = env.reset()
     env.configurePlayer(random.choice([-1,1]))
