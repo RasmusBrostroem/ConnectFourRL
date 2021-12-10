@@ -38,16 +38,15 @@ def play_game(env, agent, opponent = None, show_game = False):
 
         s, r, done, _ = env.step(action)
 
-        if done:
-            if show_game:
-                env.render(r)
-                pg.display.quit()
-                
-            agent.rewards.append(r)
-            agent.calculate_rewards()
+        if done and show_game:
+            env.render(r)
+            pg.display.quit()
+            
+            #agent.rewards.append(r)
+            #agent.calculate_rewards(env)
             return r
-        elif env.player == 1:
-            agent.rewards.append(r)
+        #elif env.player == 1:
+            #agent.rewards.append(r)
 
         env.configurePlayer(env.player * -1)
 
