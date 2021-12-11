@@ -30,11 +30,9 @@ pg.init()
 generations = 100
 episodes_per_gen = 100000 # Episodes before new generation
 batch_size = 100 #Episodes before param update
-learning_rate = 0.0001 # Learning rate
+learning_rate = 0.01 # Learning rate
 decay_rate = 0.01 # Weight decay for Adam optimizer
 illegal_move_possible = False
-
-probs_game = []
 
 # Optimizer
 optimizer = optim.Adam(agent.parameters(), lr=learning_rate, weight_decay=decay_rate)
@@ -81,8 +79,6 @@ def play_game(env, agent, opponent = None, show_game = False):
             else:
                 action = agent.select_action(s, choices)
 
-            probs_game.append(agent.probs[-1])
-
         s, r, done, _ = env.step(action)
 
         if done:
@@ -102,15 +98,15 @@ def play_game(env, agent, opponent = None, show_game = False):
         env.configurePlayer(env.player * -1)
 
 def update_agent(agent, optimizer):
-    # loss = []
-    # for log_prob, reward in zip(agent.saved_log_probs, agent.rewards):
-    #     loss.append(-log_prob * reward)
+    loss = []
+    for log_prob, reward in zip(agent.saved_log_probs, agent.rewards):
+        loss.append(log_prob * reward)
 
-    loss = [-log_prob*reward if succes else -torch.log(1-prob)*reward
-            for log_prob, reward, prob, succes 
-            in zip(agent.saved_log_probs, agent.rewards, agent.probs, agent.game_succes)]
+    # loss = [-log_prob*reward if succes else -torch.log(1-prob)*reward
+    #         for log_prob, reward, prob, succes 
+    #         in zip(agent.saved_log_probs, agent.rewards, agent.probs, agent.game_succes)]
     
-    loss = torch.stack(loss).sum()
+    loss = torch.stack(loss).mean()
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
@@ -175,5 +171,5 @@ def train_agent(env, agent, optimizer, generations, episodes_per_gen, batchsize,
         torch.save(agent, agent_path)
 
 if __name__ == "__main__":
-    train_agent(env, agent, optimizer, generations, episodes_per_gen, batch_size, ["C:\Projects\ConnectFourRL\AgentParameters", "StackerBoi"], print_every=10000, show_every=100000000)
+    train_agent(env, agent, optimizer, generations, episodes_per_gen, batch_size, ["C:\Projects\ConnectFourRL\AgentParameters", "StackerBoi"], print_every=1000, show_every=100000000)
     run.stop()
