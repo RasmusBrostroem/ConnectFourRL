@@ -27,12 +27,12 @@ agent.to(device)
 pg.init()
 
 # Parameters
-generations = 1
-episodes_per_gen = 5000 # Episodes before new generation
-batch_size = 10 #Episodes before param update
-learning_rate = 0.001 # Learning rate
+generations = 100
+episodes_per_gen = 100000 # Episodes before new generation
+batch_size = 100 #Episodes before param update
+learning_rate = 0.0001 # Learning rate
 decay_rate = 0.01 # Weight decay for Adam optimizer
-illegal_move_possible = False
+illegal_move_possible = True
 
 probs_game = []
 
@@ -80,7 +80,7 @@ def play_game(env, agent, opponent = None, show_game = False):
                 action = agent.select_action(s, None)
             else:
                 action = agent.select_action(s, choices)
-                
+
             probs_game.append(agent.probs[-1])
 
         s, r, done, _ = env.step(action)
@@ -94,14 +94,6 @@ def play_game(env, agent, opponent = None, show_game = False):
             agent.game_succes.append(None)
             agent.calculate_rewards(env)
 
-            # Logging probs for this game
-            if agent.game_succes[-1]:
-                run["metrics/AverageProbWins"].log(torch.mean(torch.tensor(probs_game)))
-            else:
-                run["metrics/AverageProbLoss"].log(torch.mean(torch.tensor(probs_game)))
-            
-            del probs_game[:]
-
             return r
         elif env.player == 1:
             agent.rewards.append(r)
@@ -110,18 +102,21 @@ def play_game(env, agent, opponent = None, show_game = False):
         env.configurePlayer(env.player * -1)
 
 def update_agent(agent, optimizer):
-    loss = []
-    for log_prob, reward in zip(agent.saved_log_probs, agent.rewards):
-        loss.append(-log_prob * reward)
+    # loss = []
+    # for log_prob, reward in zip(agent.saved_log_probs, agent.rewards):
+    #     loss.append(-log_prob * reward)
 
-    # loss = [-log_prob*reward if succes else -torch.log(1-prob)*reward
-    #         for log_prob, reward, prob, succes 
-    #         in zip(agent.saved_log_probs, agent.rewards, agent.probs, agent.game_succes)]
+    loss = [-log_prob*reward if succes else -torch.log(1-prob)*reward
+            for log_prob, reward, prob, succes 
+            in zip(agent.saved_log_probs, agent.rewards, agent.probs, agent.game_succes)]
     
     loss = torch.stack(loss).sum()
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
+
+    run["metrics/AverageProbWins"].log(torch.mean(torch.tensor([prob for prob, succes in zip(agent.probs, agent.game_succes) if succes])))
+    run["metrics/AverageProbLoss"].log(torch.mean(torch.tensor([prob for prob, succes in zip(agent.probs, agent.game_succes) if not succes])))
 
     del agent.rewards[:]
     del agent.saved_log_probs[:]
@@ -166,7 +161,10 @@ def train_agent(env, agent, optimizer, generations, episodes_per_gen, batchsize,
                 wins = [game_r == env.game.win for game_r in games_final_rewards]
                 illegals = [game_r == env.game.illegal for game_r in games_final_rewards]
 
-                print(f'Reinforce ep {ep} in gen {gen} done. Winrate: {np.mean(wins)}. Illegal move rate: {np.mean(illegals)}. Average Loss: {np.mean(losses)}')
+                #print(f'Reinforce ep {ep} in gen {gen} done. Winrate: {np.mean(wins)}. Illegal move rate: {np.mean(illegals)}. Average Loss: {np.mean(losses)}')
+                run["metrics/Winrate"].log(np.mean(wins))
+                run["metrics/Illegal_rate"].log(np.mean(illegals))
+                run["metrics/Average_loss"].log(np.mean(losses))
 
                 del games_final_rewards[:]
                 del losses[:]
@@ -177,5 +175,5 @@ def train_agent(env, agent, optimizer, generations, episodes_per_gen, batchsize,
         torch.save(agent, agent_path)
 
 if __name__ == "__main__":
-    train_agent(env, agent, optimizer, generations, episodes_per_gen, batch_size, ["C:\Projects\ConnectFourRL\AgentParameters", "StackerBoi"])
+    train_agent(env, agent, optimizer, generations, episodes_per_gen, batch_size, ["C:\Projects\ConnectFourRL\AgentParameters", "StackerBoi"], print_every=10000, show_every=100000000)
     run.stop()
