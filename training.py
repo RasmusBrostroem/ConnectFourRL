@@ -6,11 +6,18 @@ import os
 import sys
 import keyboard
 
+# Neptune
+import neptune.new as neptune
+
 import torch
 import torch.optim as optim
 
 import random
 from agent import DirectPolicyAgent
+
+run = neptune.init(
+    project="DLProject/ConnectFour"
+) 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 device = 'cpu'
@@ -20,17 +27,40 @@ agent.to(device)
 pg.init()
 
 # Parameters
-generations = 10
-episodes_per_gen = 10000 # Episodes before new generation
+generations = 1
+episodes_per_gen = 5000 # Episodes before new generation
 batch_size = 10 #Episodes before param update
 learning_rate = 0.001 # Learning rate
 decay_rate = 0.01 # Weight decay for Adam optimizer
+illegal_move_possible = False
+
+probs_game = []
 
 # Optimizer
 optimizer = optim.Adam(agent.parameters(), lr=learning_rate, weight_decay=decay_rate)
 
 # Environment
 env = gym.make('ConnectFour-v0')
+
+# Neptune params
+params = {"generations": generations,
+          "episodes_per_gen": episodes_per_gen,
+          "batch_size": batch_size,
+          "optimizer": "Adam",
+          "learning_rate": learning_rate,
+          "weight_decay": decay_rate,
+          "reward_decay": agent.gamma,
+          "win_reward": env.game.win,
+          "loss_reward": env.game.lose,
+          "tie_reward": env.game.tie,
+          "illegal_reward": env.game.illegal,
+          "illegal_move_possible": illegal_move_possible}
+
+run["parameters"] = params
+
+for name, param in agent.named_parameters():
+    run["model/summary"].log(f"name: {name} with size: {param.size()}")
+
 
 def play_game(env, agent, opponent = None, show_game = False):
     s = env.reset()
@@ -46,7 +76,12 @@ def play_game(env, agent, opponent = None, show_game = False):
             with torch.no_grad():
                 action = opponent.select_action(s, choices)
         else:
-            action = agent.select_action(s, choices)
+            if illegal_move_possible:
+                action = agent.select_action(s, None)
+            else:
+                action = agent.select_action(s, choices)
+                
+            probs_game.append(agent.probs[-1])
 
         s, r, done, _ = env.step(action)
 
@@ -58,6 +93,15 @@ def play_game(env, agent, opponent = None, show_game = False):
             agent.rewards.append(r)
             agent.game_succes.append(None)
             agent.calculate_rewards(env)
+
+            # Logging probs for this game
+            if agent.game_succes[-1]:
+                run["metrics/AverageProbWins"].log(torch.mean(torch.tensor(probs_game)))
+            else:
+                run["metrics/AverageProbLoss"].log(torch.mean(torch.tensor(probs_game)))
+            
+            del probs_game[:]
+
             return r
         elif env.player == 1:
             agent.rewards.append(r)
@@ -134,3 +178,4 @@ def train_agent(env, agent, optimizer, generations, episodes_per_gen, batchsize,
 
 if __name__ == "__main__":
     train_agent(env, agent, optimizer, generations, episodes_per_gen, batch_size, ["C:\Projects\ConnectFourRL\AgentParameters", "StackerBoi"])
+    run.stop()
