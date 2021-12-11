@@ -32,7 +32,7 @@ episodes_per_gen = 100000 # Episodes before new generation
 batch_size = 100 #Episodes before param update
 learning_rate = 0.0001 # Learning rate
 decay_rate = 0.01 # Weight decay for Adam optimizer
-illegal_move_possible = True
+illegal_move_possible = False
 
 probs_game = []
 
