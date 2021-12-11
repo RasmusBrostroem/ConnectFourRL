@@ -57,7 +57,7 @@ class DirectPolicyAgent(nn.Module):
         probs = self.foward(x)
         m = Categorical(probs)
         action = m.sample()
-        if action not in legal_moves:
+        if legal_moves and action not in legal_moves:
             action = torch.tensor(random.choice(legal_moves))
 
         self.saved_log_probs.append(m.log_prob(action))
