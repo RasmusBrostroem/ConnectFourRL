@@ -40,7 +40,7 @@ class DirectPolicyAgent(nn.Module):
         self.probs = []
         self.rewards = []
     
-    def foward(self, x):
+    def forward(self, x):
         x = self.L1(x)
         x = F.relu(x)
         x = self.L2(x)
@@ -54,7 +54,7 @@ class DirectPolicyAgent(nn.Module):
         x = x.copy()
         x = torch.from_numpy(x).float().flatten()
         x = x.to(self.device)
-        probs = self.foward(x)
+        probs = self.forward(x)
         m = Categorical(probs)
         action = m.sample()
         if legal_moves and action not in legal_moves:
