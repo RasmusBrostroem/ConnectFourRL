@@ -54,12 +54,12 @@ class CustomEnv(gym.Env):
     def configurePlayer(self, newPlayer):
         self.player = newPlayer
 
-    def configureRewards(self, win, lose, tie, illegal):
+    def configureRewards(self, win, loss, tie, illegal):
         '''
         Function to change the standard rewards in the game to something new
         '''
         self.win = win
-        self.lose = lose
+        self.loss = loss
         self.tie = tie
         self.illegal = illegal
 
