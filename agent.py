@@ -31,9 +31,6 @@ class DirectPolicyAgent(nn.Module):
         self.L2 = nn.Linear(200, 300)
         self.L3 = nn.Linear(300, 100)
         self.L4 = nn.Linear(100, 100)
-        # self.L5 = nn.Linear(100, 600)
-        # self.L6 = nn.Linear(600, 1000)
-        # self.L7 = nn.Linear(1000,100)
         self.final = nn.Linear(100, 7)
 
         self.device = device
@@ -53,12 +50,6 @@ class DirectPolicyAgent(nn.Module):
         x = F.relu(x)
         x = self.L4(x)
         x = F.relu(x)
-        # x = self.L5(x)
-        # x = F.relu(x)
-        # x = self.L6(x)
-        # x = F.relu(x)
-        # x = self.L7(x)
-        # x = F.relu(x)
         x = self.final(x)
         return F.softmax(x, dim=0)
 
