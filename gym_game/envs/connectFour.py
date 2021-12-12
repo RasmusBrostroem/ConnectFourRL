@@ -2,7 +2,7 @@ import pygame as pg
 import numpy as np 
 
 class connect_four():
-    def __init__(self):
+    def __init__(self, win = 0, loss = 0, tie = 0, illegal = 0):
         # The attributes to display the game
         self.size = 700
         self.rows = 6
@@ -11,10 +11,10 @@ class connect_four():
         self.board = np.zeros((6,7))
 
         #Evaluate attributes
-        self.win = 100
-        self.lose = -50
-        self.tie = 20
-        self.illegal = 25
+        self.win = win
+        self.loss = loss
+        self.tie = tie
+        self.illegal = illegal
     
     def draw_board(self, reward):
         '''
@@ -50,7 +50,7 @@ class connect_four():
             myfont = pg.font.SysFont("monospace", int(font_size))
             label = myfont.render(text, 1, yellow)
             screen.blit(label, (self.size/2-label.get_width()/2,square_size/2-label.get_height()/2))
-        elif reward == self.lose:
+        elif reward == self.loss:
             text = "Agent lost!"
             font_size = min(((self.size-10)/len(text)/0.6), square_size/1.16)
             myfont = pg.font.SysFont("monospace", int(font_size))
@@ -187,7 +187,7 @@ class connect_four():
             if player == 1:
                 return self.win
             else:
-                return self.lose
+                return self.loss
         elif self.is_tie():
             return self.tie
         else:
