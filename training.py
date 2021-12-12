@@ -3,6 +3,7 @@ import os
 import torch
 import random
 from agent import DirectPolicyAgent, DirectPolicyAgent_large
+import numpy as np
 
 def play_game(env, agent, illegal_move_possible, opponent = None, show_game = False):
     s = env.reset()
@@ -82,7 +83,7 @@ def load_agent(path, name, gen, size):
     
     return opponent
 
-def train_agent(env, agent, optimizer, generations, episodes_per_gen, batchsize, minimax, agent_size, illegal_move_possible, path_name = ["",""], print_every = 1000, show_every = 1000):
+def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_gen, batchsize, minimax, agent_size, illegal_move_possible, path_name = ["",""], print_every = 1000, show_every = 1000):
     losses = []
     games_final_rewards = []
 
@@ -112,15 +113,19 @@ def train_agent(env, agent, optimizer, generations, episodes_per_gen, batchsize,
                 losses.append(loss)
             
             if (ep+1) % print_every == 0:
-                #print(f'Reinforce ep {ep} in gen {gen} done. Winrate: {np.mean(wins)}. Illegal move rate: {np.mean(illegals)}. Average Loss: {np.mean(losses)}')
-                run["metrics/Winrate"].log(torch.mean(torch.tensor([game_r == env.game.win for game_r in games_final_rewards])))
-                run["metrics/Illegal_rate"].log(torch.mean(torch.tensor([game_r == env.game.illegal for game_r in games_final_rewards])))
-                run["metrics/Loss_rate"].log(torch.mean(torch.tensor([game_r == env.game.loss for game_r in games_final_rewards])))
-                run["metrics/Tie_rate"].log(torch.mean(torch.tensor([game_r == env.game.tie for game_r in games_final_rewards])))
+                wins = [game_r == env.game.win for game_r in games_final_rewards]
+                illegals = [game_r == env.game.illegal for game_r in games_final_rewards]
+                defeats = [game_r == env.game.loss for game_r in games_final_rewards]
+                ties = [game_r == env.game.tie for game_r in games_final_rewards]
 
-                run["metrics/Average_loss"].log(torch.mean(losses))
-                run["metrics/AverageProbWins"].log(torch.mean(torch.tensor([prob for prob, succes in zip(agent.probs, agent.game_succes) if succes])))
-                run["metrics/AverageProbLoss"].log(torch.mean(torch.tensor([prob for prob, succes in zip(agent.probs, agent.game_succes) if not succes])))
+                neptune_run["metrics/Winrate"].log(np.mean(wins))
+                neptune_run["metrics/Illegal_rate"].log(np.mean(illegals))
+                neptune_run["metrics/Loss_rate"].log(np.mean(defeats))
+                neptune_run["metrics/Tie_rate"].log(np.mean(ties))
+
+                neptune_run["metrics/Average_loss"].log(np.mean(losses))
+                neptune_run["metrics/AverageProbWins"].log(np.mean([prob.detach().numpy() for prob, succes in zip(agent.probs, agent.game_succes) if succes]))
+                neptune_run["metrics/AverageProbLoss"].log(np.mean([prob.detach().numpy()  for prob, succes in zip(agent.probs, agent.game_succes) if not succes]))
 
                 del games_final_rewards[:]
                 del losses[:]
