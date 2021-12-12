@@ -7,7 +7,7 @@ import random
 
 model = DirectPolicyAgent("cpu")
 model.train(False)
-model = torch.load("AgentParameters/StackerBoi_gen_24.pth")
+model = torch.load("AgentParameters/StackerBoi_gen_1.pth")
 # opponent = DirectPolicyAgent("cpu")
 # opponent.train(False)
 # opponent = torch.load("AgentParameters/StackerBoi_gen_25.pth")
@@ -57,9 +57,9 @@ def play_game(env, agent, opponent = None, show_game = False):
 wins = 0
 ties = 0
 illegal = 0
-n_games = 1000
+n_games = 3
 for i in range(n_games):
-    re = play_game(env, model, show_game=False)
+    re = play_game(env, model, show_game=True)
     if re == env.game.win:
         wins += 1
     elif re == env.game.tie:
