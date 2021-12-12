@@ -55,7 +55,7 @@ for i, model in models.iterrows():
     for name, param in agent.named_parameters():
         run["model/summary"].log(f"name: {name} with size: {param.size()}")
 
-    train_agent(env, agent, optimizer, model["Generations"], model["Episodes"], model["BatchSize"], model["MinMax"], model["AgentSize"], model["AgentSize"], ["AgentParameters", model["ModelName"]], show_every=1000000)
+    train_agent(env, agent, optimizer, run, model["Generations"], model["Episodes"], model["BatchSize"], model["MinMax"], model["AgentSize"], model["IllegalMove"], ["AgentParameters", model["ModelName"]], show_every=1000000)
 
     models.loc[i, "Neptune"] = run._short_id
 
