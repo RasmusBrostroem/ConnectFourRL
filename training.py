@@ -27,10 +27,10 @@ agent.to(device)
 pg.init()
 
 # Parameters
-generations = 3
-episodes_per_gen = 10000 # Episodes before new generation
-batch_size = 100 #Episodes before param update
-learning_rate = 0.001 # Learning rate
+generations = 1
+episodes_per_gen = 1000 # Episodes before new generation
+batch_size = 1 #Episodes before param update
+learning_rate = 0.0001 # Learning rate
 decay_rate = 0 # Weight decay for Adam optimizer
 illegal_move_possible = False
 
@@ -171,5 +171,5 @@ def train_agent(env, agent, optimizer, generations, episodes_per_gen, batchsize,
         torch.save(agent, agent_path)
 
 if __name__ == "__main__":
-    train_agent(env, agent, optimizer, generations, episodes_per_gen, batch_size, ["C:\Projects\ConnectFourRL\AgentParameters", "Large_test"], print_every=1000, show_every=100000000)
+    train_agent(env, agent, optimizer, generations, episodes_per_gen, batch_size, ["C:\Projects\ConnectFourRL\AgentParameters", "StackAttack_test"], print_every=10, show_every=999)
     run.stop()
