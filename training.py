@@ -5,6 +5,7 @@ import gym_game
 import os
 import sys
 import keyboard
+from numba import jit, cuda
 
 # Neptune
 import neptune.new as neptune
