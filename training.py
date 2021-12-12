@@ -5,7 +5,6 @@ import gym_game
 import os
 import sys
 import keyboard
-import time
 
 # Neptune
 import neptune.new as neptune
@@ -172,8 +171,5 @@ def train_agent(env, agent, optimizer, generations, episodes_per_gen, batchsize,
         torch.save(agent, agent_path)
 
 if __name__ == "__main__":
-    start = time.time()
     train_agent(env, agent, optimizer, generations, episodes_per_gen, batch_size, ["C:\Projects\ConnectFourRL\AgentParameters", "Large_test"], print_every=1000, show_every=100000000)
     run.stop()
-    end = time.time()
-    print(f"Time: {end-start}")
