@@ -75,7 +75,7 @@ class DirectPolicyAgent(nn.Module):
             
             weighted_reward = self.gamma**i * final_reward
             self.rewards[len(self.rewards)-(i+1)] = weighted_reward
-            if final_reward == env.game.lose or final_reward == env.game.illegal:
+            if final_reward == env.game.loss or final_reward == env.game.illegal:
                 self.game_succes[len(self.rewards)-(i+1)] = False
             else:
                 self.game_succes[len(self.rewards)-(i+1)] = True
