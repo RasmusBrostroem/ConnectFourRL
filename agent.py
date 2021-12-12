@@ -28,8 +28,9 @@ class DirectPolicyAgent(nn.Module):
     def __init__(self, device):
         super(DirectPolicyAgent, self).__init__()
         self.L1 = nn.Linear(42, 200)
-        self.L2 = nn.Linear(200, 100)
-        self.L3 = nn.Linear(100, 100)
+        self.L2 = nn.Linear(200, 300)
+        self.L3 = nn.Linear(300, 100)
+        self.L4 = nn.Linear(100, 100)
         self.final = nn.Linear(100, 7)
 
         self.device = device
@@ -40,12 +41,14 @@ class DirectPolicyAgent(nn.Module):
         self.probs = []
         self.rewards = []
     
-    def foward(self, x):
+    def forward(self, x):
         x = self.L1(x)
         x = F.relu(x)
         x = self.L2(x)
         x = F.relu(x)
         x = self.L3(x)
+        x = F.relu(x)
+        x = self.L4(x)
         x = F.relu(x)
         x = self.final(x)
         return F.softmax(x, dim=0)
@@ -54,10 +57,10 @@ class DirectPolicyAgent(nn.Module):
         x = x.copy()
         x = torch.from_numpy(x).float().flatten()
         x = x.to(self.device)
-        probs = self.foward(x)
+        probs = self.forward(x)
         m = Categorical(probs)
         action = m.sample()
-        if action not in legal_moves:
+        if legal_moves and action not in legal_moves:
             action = torch.tensor(random.choice(legal_moves))
 
         self.saved_log_probs.append(m.log_prob(action))
