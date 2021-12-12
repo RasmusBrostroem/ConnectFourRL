@@ -11,9 +11,9 @@ class connect_four():
         self.board = np.zeros((6,7))
 
         #Evaluate attributes
-        self.win = 3
-        self.lose = -3
-        self.tie = 0.1
+        self.win = 100
+        self.lose = -50
+        self.tie = 20
         self.illegal = 25
     
     def draw_board(self, reward):

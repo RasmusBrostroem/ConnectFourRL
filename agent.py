@@ -34,7 +34,7 @@ class DirectPolicyAgent(nn.Module):
         self.final = nn.Linear(100, 7)
 
         self.device = device
-        self.gamma = 0.95
+        self.gamma = 0.99
 
         self.saved_log_probs = []
         self.game_succes = [] # True if win or tie, false if lose or illegal

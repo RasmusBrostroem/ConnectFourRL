@@ -30,8 +30,8 @@ pg.init()
 generations = 100
 episodes_per_gen = 100000 # Episodes before new generation
 batch_size = 100 #Episodes before param update
-learning_rate = 0.01 # Learning rate
-decay_rate = 0.01 # Weight decay for Adam optimizer
+learning_rate = 0.001 # Learning rate
+decay_rate = 0 # Weight decay for Adam optimizer
 illegal_move_possible = False
 
 # Optimizer
@@ -100,7 +100,7 @@ def play_game(env, agent, opponent = None, show_game = False):
 def update_agent(agent, optimizer):
     loss = []
     for log_prob, reward in zip(agent.saved_log_probs, agent.rewards):
-        loss.append(log_prob * reward)
+        loss.append(-log_prob * reward)
 
     # loss = [-log_prob*reward if succes else -torch.log(1-prob)*reward
     #         for log_prob, reward, prob, succes 
