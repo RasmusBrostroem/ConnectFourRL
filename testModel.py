@@ -7,10 +7,10 @@ import random
 
 model = DirectPolicyAgent("cpu")
 model.train(False)
-model = torch.load("AgentParameters/StackerBoi_gen_25.pth")
-opponent = DirectPolicyAgent("cpu")
-opponent.train(False)
-opponent = torch.load("AgentParameters/StackerBoi_gen_24.pth")
+model = torch.load("AgentParameters/StackerBoi_gen_24.pth")
+# opponent = DirectPolicyAgent("cpu")
+# opponent.train(False)
+# opponent = torch.load("AgentParameters/StackerBoi_gen_25.pth")
 
 env = gym.make('ConnectFour-v0')
 
@@ -30,14 +30,14 @@ def play_game(env, agent, opponent = None, show_game = False):
         elif env.player == -1 and opponent is not None:
             with torch.no_grad():
                 for i in range(10):
-                    action = opponent.select_action(s, choices)
+                    action = opponent.select_action(s*-1, choices)
                     if action in choices:
                         break
                     elif i == 9:
                         action = random.choice(choices)
         else:
             with torch.no_grad():
-                action = agent.select_action(s, None)
+                action = agent.select_action(s, choices)
 
         s, r, done, _ = env.step(action)
 
@@ -57,9 +57,9 @@ def play_game(env, agent, opponent = None, show_game = False):
 wins = 0
 ties = 0
 illegal = 0
-n_games = 10
+n_games = 1000
 for i in range(n_games):
-    re = play_game(env, model, opponent, show_game=True)
+    re = play_game(env, model, show_game=False)
     if re == env.game.win:
         wins += 1
     elif re == env.game.tie:

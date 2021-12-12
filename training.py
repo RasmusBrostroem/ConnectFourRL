@@ -17,7 +17,7 @@ from agent import DirectPolicyAgent, DirectPolicyAgent_large
 
 run = neptune.init(
     project="DLProject/ConnectFour"
-) 
+)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 device = 'cpu'
@@ -72,7 +72,7 @@ def play_game(env, agent, opponent = None, show_game = False):
             action = random.choice(choices)
         elif env.player == -1 and opponent is not None:
             with torch.no_grad():
-                action = opponent.select_action(s, choices)
+                action = opponent.select_action(s*-1, choices)
         else:
             if illegal_move_possible:
                 action = agent.select_action(s, None)
