@@ -21,7 +21,7 @@ run = neptune.init(
 ) 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-device = 'cpu'
+#device = 'cpu'
 agent = DirectPolicyAgent(device)
 agent.to(device)
 
@@ -60,7 +60,7 @@ run["parameters"] = params
 for name, param in agent.named_parameters():
     run["model/summary"].log(f"name: {name} with size: {param.size()}")
 
-
+@jit(target = device)
 def play_game(env, agent, opponent = None, show_game = False):
     s = env.reset()
     env.configurePlayer(random.choice([-1,1]))
@@ -98,6 +98,7 @@ def play_game(env, agent, opponent = None, show_game = False):
 
         env.configurePlayer(env.player * -1)
 
+@jit(target = device)
 def update_agent(agent, optimizer):
     loss = []
     for log_prob, reward in zip(agent.saved_log_probs, agent.rewards):
@@ -122,6 +123,7 @@ def update_agent(agent, optimizer):
 
     return loss.detach().numpy()
 
+@jit(target = device)
 def train_agent(env, agent, optimizer, generations, episodes_per_gen, batchsize, path_name = ["",""], print_every = 1000, show_every = 1000):
     losses = []
     games_final_rewards = []
@@ -172,5 +174,5 @@ def train_agent(env, agent, optimizer, generations, episodes_per_gen, batchsize,
         torch.save(agent, agent_path)
 
 if __name__ == "__main__":
-    train_agent(env, agent, optimizer, generations, episodes_per_gen, batch_size, ["C:\Projects\ConnectFourRL\AgentParameters", "StackerBoi"], print_every=1000, show_every=100000000)
+    train_agent(env, agent, optimizer, generations, episodes_per_gen, batch_size, ["C:\Projects\ConnectFourRL\AgentParameters", "GPU_test"], print_every=1000, show_every=100000000)
     run.stop()
