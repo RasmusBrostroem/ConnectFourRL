@@ -33,7 +33,7 @@ def play_game(env, agent, opponent = None, show_game = False):
                     elif i == 9:
                         action = random.choice(choices)
         else:
-            action = agent.select_action(s, choices)
+            action = agent.select_action(s, None)
 
         s, r, done, _ = env.step(action)
 
