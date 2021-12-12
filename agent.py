@@ -25,7 +25,7 @@ import random
 
 
 class DirectPolicyAgent(nn.Module):
-    def __init__(self, device):
+    def __init__(self, device, gamma = 0.99):
         super(DirectPolicyAgent, self).__init__()
         self.L1 = nn.Linear(42, 200)
         self.L2 = nn.Linear(200, 300)
@@ -34,7 +34,7 @@ class DirectPolicyAgent(nn.Module):
         self.final = nn.Linear(100, 7)
 
         self.device = device
-        self.gamma = 0.99
+        self.gamma = gamma
 
         self.saved_log_probs = []
         self.game_succes = [] # True if win or tie, false if lose or illegal
@@ -58,14 +58,14 @@ class DirectPolicyAgent(nn.Module):
         x = torch.from_numpy(x).float().flatten()
         x = x.to(self.device)
         probs = self.forward(x)
-        m = Categorical(probs)
+        m = Categorical(probs.to("cpu"))
         action = m.sample()
         if legal_moves and action not in legal_moves:
             action = torch.tensor(random.choice(legal_moves))
 
         self.saved_log_probs.append(m.log_prob(action))
         self.probs.append(probs[action])
-        return action
+        return action.to("cpu")
 
     def calculate_rewards(self, env):
         final_reward = self.rewards[-1]
@@ -80,3 +80,24 @@ class DirectPolicyAgent(nn.Module):
             else:
                 self.game_succes[len(self.rewards)-(i+1)] = True
 
+class DirectPolicyAgent_large(DirectPolicyAgent):
+    def __init__(self, device, gamma=0.99):
+        super().__init__(device, gamma=gamma)
+        self.L5 = nn.Linear(100,200)
+        self.L6 = nn.Linear(200,100)
+    
+    def forward(self, x):
+        x = self.L1(x)
+        x = F.relu(x)
+        x = self.L2(x)
+        x = F.relu(x)
+        x = self.L3(x)
+        x = F.relu(x)
+        x = self.L4(x)
+        x = F.relu(x)
+        x = self.L5(x)
+        x = F.relu(x)
+        x = self.L6(x)
+        x = F.relu(x)
+        x = self.final(x)
+        return F.softmax(x, dim=0)

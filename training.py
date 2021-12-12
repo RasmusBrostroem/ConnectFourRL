@@ -5,7 +5,6 @@ import gym_game
 import os
 import sys
 import keyboard
-from numba import jit, cuda
 
 # Neptune
 import neptune.new as neptune
@@ -14,7 +13,7 @@ import torch
 import torch.optim as optim
 
 import random
-from agent import DirectPolicyAgent
+from agent import DirectPolicyAgent, DirectPolicyAgent_large
 
 run = neptune.init(
     project="DLProject/ConnectFour"
@@ -22,14 +21,14 @@ run = neptune.init(
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 device = 'cpu'
-agent = DirectPolicyAgent(device)
+agent = DirectPolicyAgent_large(device)
 agent.to(device)
 
 pg.init()
 
 # Parameters
-generations = 100
-episodes_per_gen = 100000 # Episodes before new generation
+generations = 3
+episodes_per_gen = 10000 # Episodes before new generation
 batch_size = 100 #Episodes before param update
 learning_rate = 0.001 # Learning rate
 decay_rate = 0 # Weight decay for Adam optimizer
@@ -172,5 +171,5 @@ def train_agent(env, agent, optimizer, generations, episodes_per_gen, batchsize,
         torch.save(agent, agent_path)
 
 if __name__ == "__main__":
-    train_agent(env, agent, optimizer, generations, episodes_per_gen, batch_size, ["C:\Projects\ConnectFourRL\AgentParameters", "StackerBoi"], print_every=1000, show_every=100000000)
+    train_agent(env, agent, optimizer, generations, episodes_per_gen, batch_size, ["C:\Projects\ConnectFourRL\AgentParameters", "Large_test"], print_every=1000, show_every=100000000)
     run.stop()
