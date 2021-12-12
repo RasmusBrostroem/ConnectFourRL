@@ -7,7 +7,7 @@ import random
 
 model = DirectPolicyAgent("cpu")
 model.train(False)
-model = torch.load("AgentParameters/StackerBoi_gen_4.pth")
+model = torch.load("AgentParameters/StackerBoi_gen_25.pth")
 
 env = gym.make('ConnectFour-v0')
 
@@ -52,8 +52,8 @@ def play_game(env, agent, opponent = None, show_game = False):
 
 wins = 0
 ties = 0
-for i in range(1000):
-    re = play_game(env, model, show_game=False)
+for i in range(10):
+    re = play_game(env, model, show_game=True)
     if re == env.game.win:
         wins += 1
     elif re == env.game.tie:
