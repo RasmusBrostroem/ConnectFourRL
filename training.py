@@ -126,8 +126,8 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
                 neptune_run["metrics/Tie_rate"].log(np.mean(ties))
 
                 neptune_run["metrics/Average_loss"].log(np.mean(losses))
-                neptune_run["metrics/AverageProbWins"].log(np.mean([prob.detach().numpy() for prob, succes in zip(agent.probs, agent.game_succes) if succes]))
-                neptune_run["metrics/AverageProbLoss"].log(np.mean([prob.detach().numpy()  for prob, succes in zip(agent.probs, agent.game_succes) if not succes]))
+                neptune_run["metrics/AverageProbWins"].log(np.mean([prob.cpu().detach().numpy() for prob, succes in zip(agent.probs, agent.game_succes) if succes]))
+                neptune_run["metrics/AverageProbLoss"].log(np.mean([prob.cpu().detach().numpy()  for prob, succes in zip(agent.probs, agent.game_succes) if not succes]))
 
                 del games_final_rewards[:]
                 del losses[:]
