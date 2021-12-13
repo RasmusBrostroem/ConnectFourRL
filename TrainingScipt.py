@@ -62,5 +62,4 @@ for i, model in models.iterrows():
     models.loc[i, "Neptune"] = run._short_id
 
     run.stop()
-
-models.to_excel("AgentToTrain.xlsx", index=False)
+    models.to_excel("AgentToTrain.xlsx", index=False)
