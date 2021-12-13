@@ -62,7 +62,7 @@ def update_agent(agent, optimizer):
 
     return loss.detach().numpy()
 
-def load_agent(path, name, gen, size):
+def load_agent(path, name, gen, size, device):
     '''
     Loads one of the agents (small or large) if the generation (gen) exists with the giving name and path.
     If this agent doesn't exist, then return None
@@ -74,16 +74,18 @@ def load_agent(path, name, gen, size):
             opponent = DirectPolicyAgent(device)
             opponent.train(False)
             opponent = torch.load(opponent_path)
+            opponent.to(device)
         else:
             opponent = DirectPolicyAgent_large(device)
             opponent.train(False)
             opponent = torch.load(opponent_path)
+            opponent.to(device)
     else:
         opponent = None
     
     return opponent
 
-def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_gen, batchsize, minimax, agent_size, illegal_move_possible, path_name = ["",""], print_every = 1000, show_every = 1000):
+def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_gen, batchsize, minimax, agent_size, illegal_move_possible, device, path_name = ["",""], print_every = 1000, show_every = 1000):
     losses = []
     games_final_rewards = []
 
@@ -92,7 +94,7 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
     for gen in range(generations):
         opponents = None
         if not minimax:
-            opponents = [load_agent(path, name, gen-i, agent_size) for i in range(5,0,-1)]
+            opponents = [load_agent(path, name, gen-i, agent_size, device) for i in range(5,0,-1)]
         for ep in range(episodes_per_gen):
             if type(opponents) == list:
                 opponent_id = ep % 5
