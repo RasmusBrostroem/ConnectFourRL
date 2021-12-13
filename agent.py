@@ -75,7 +75,7 @@ class DirectPolicyAgent(nn.Module):
             
             weighted_reward = self.gamma**i * final_reward
             self.rewards[len(self.rewards)-(i+1)] = weighted_reward
-            if final_reward == env.game.lose or final_reward == env.game.illegal:
+            if final_reward == env.game.loss or final_reward == env.game.illegal:
                 self.game_succes[len(self.rewards)-(i+1)] = False
             else:
                 self.game_succes[len(self.rewards)-(i+1)] = True
@@ -83,8 +83,12 @@ class DirectPolicyAgent(nn.Module):
 class DirectPolicyAgent_large(DirectPolicyAgent):
     def __init__(self, device, gamma=0.99):
         super().__init__(device, gamma=gamma)
-        self.L5 = nn.Linear(100,200)
-        self.L6 = nn.Linear(200,100)
+        self.L1 = nn.Linear(42, 300)
+        self.L2 = nn.Linear(300, 500)
+        self.L3 = nn.Linear(500, 1000)
+        self.L4 = nn.Linear(1000, 600)
+        self.L5 = nn.Linear(600, 200)
+        self.L6 = nn.Linear(200, 100)
     
     def forward(self, x):
         x = self.L1(x)

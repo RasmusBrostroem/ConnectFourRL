@@ -27,7 +27,7 @@ def play_game(env, agent, opponent = None, show_game = False):
         elif env.player == -1 and opponent is not None:
             with torch.no_grad():
                 for i in range(10):
-                    action = opponent.select_action(s)
+                    action = opponent.select_action(s*-1)
                     if action in choices:
                         break
                     elif i == 9:

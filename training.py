@@ -1,78 +1,24 @@
-import numpy as np
-import gym
 import pygame as pg
-import gym_game
 import os
-import sys
-import keyboard
-
-# Neptune
-import neptune.new as neptune
-
 import torch
-import torch.optim as optim
-
 import random
 from agent import DirectPolicyAgent, DirectPolicyAgent_large
+import numpy as np
 
-run = neptune.init(
-    project="DLProject/ConnectFour"
-) 
-
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-device = 'cpu'
-agent = DirectPolicyAgent_large(device)
-agent.to(device)
-
-pg.init()
-
-# Parameters
-generations = 3
-episodes_per_gen = 10000 # Episodes before new generation
-batch_size = 100 #Episodes before param update
-learning_rate = 0.001 # Learning rate
-decay_rate = 0 # Weight decay for Adam optimizer
-illegal_move_possible = False
-
-# Optimizer
-optimizer = optim.Adam(agent.parameters(), lr=learning_rate, weight_decay=decay_rate)
-
-# Environment
-env = gym.make('ConnectFour-v0')
-
-# Neptune params
-params = {"generations": generations,
-          "episodes_per_gen": episodes_per_gen,
-          "batch_size": batch_size,
-          "optimizer": "Adam",
-          "learning_rate": learning_rate,
-          "weight_decay": decay_rate,
-          "reward_decay": agent.gamma,
-          "win_reward": env.game.win,
-          "loss_reward": env.game.lose,
-          "tie_reward": env.game.tie,
-          "illegal_reward": env.game.illegal,
-          "illegal_move_possible": illegal_move_possible}
-
-run["parameters"] = params
-
-for name, param in agent.named_parameters():
-    run["model/summary"].log(f"name: {name} with size: {param.size()}")
-
-
-def play_game(env, agent, opponent = None, show_game = False):
+def play_game(env, agent, illegal_move_possible, opponent = None, show_game = False):
     s = env.reset()
     env.configurePlayer(random.choice([-1,1]))
 
     while True:
         if show_game:
             env.render()
+
         choices = env.game.legal_cols()
         if env.player == -1 and opponent is None:
             action = random.choice(choices)
         elif env.player == -1 and opponent is not None:
             with torch.no_grad():
-                action = opponent.select_action(s, choices)
+                action = opponent.select_action(s*-1, choices)
         else:
             if illegal_move_possible:
                 action = agent.select_action(s, None)
@@ -111,65 +57,84 @@ def update_agent(agent, optimizer):
     loss.backward()
     optimizer.step()
 
-    run["metrics/AverageProbWins"].log(torch.mean(torch.tensor([prob for prob, succes in zip(agent.probs, agent.game_succes) if succes])))
-    run["metrics/AverageProbLoss"].log(torch.mean(torch.tensor([prob for prob, succes in zip(agent.probs, agent.game_succes) if not succes])))
-
     del agent.rewards[:]
     del agent.saved_log_probs[:]
-    del agent.game_succes[:]
-    del agent.probs[:]
 
     return loss.detach().numpy()
 
-def train_agent(env, agent, optimizer, generations, episodes_per_gen, batchsize, path_name = ["",""], print_every = 1000, show_every = 1000):
+def load_agent(path, name, gen, size, device):
+    '''
+    Loads one of the agents (small or large) if the generation (gen) exists with the giving name and path.
+    If this agent doesn't exist, then return None
+    '''
+    opponent_name = name + f"_gen_{gen}.pth"
+    opponent_path = os.path.join(path, opponent_name)
+    if os.path.isfile(opponent_path):
+        if size == "Small":
+            opponent = DirectPolicyAgent(device)
+            opponent.train(False)
+            opponent = torch.load(opponent_path)
+            opponent.to(device)
+        else:
+            opponent = DirectPolicyAgent_large(device)
+            opponent.train(False)
+            opponent = torch.load(opponent_path)
+            opponent.to(device)
+    else:
+        opponent = None
+    
+    return opponent
+
+def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_gen, batchsize, minimax, agent_size, illegal_move_possible, device, path_name = ["",""], print_every = 1000, show_every = 1000):
     losses = []
     games_final_rewards = []
 
     path, name = path_name
 
-    for gen in range(1,generations+1):
-        opponent_name = name + f"_gen_{gen-1}.pth"
-        opponent_path = os.path.join(path, opponent_name)
-        if os.path.isfile(opponent_path):
-            print(f"Loading generation {gen-1}")
-            opponent = DirectPolicyAgent(device)
-            opponent.train(False)
-            opponent = torch.load(opponent_path)
-        else:
-            opponent = None
-
-        for ep in range(1,episodes_per_gen+1):
-            if keyboard.is_pressed("Esc"):
-                sys.exit()
-
-            if ep % show_every == 0:
-                final_reward = play_game(env, agent, opponent, True)
+    for gen in range(generations):
+        opponents = None
+        if not minimax:
+            opponents = [load_agent(path, name, gen-i, agent_size, device) for i in range(5,0,-1)]
+        for ep in range(episodes_per_gen):
+            if type(opponents) == list:
+                opponent_id = ep % 5
+                opponent = opponents[opponent_id]
             else:
-                final_reward = play_game(env, agent, opponent)
+                #opponent = MinMax()
+                pass
+
+            if (ep+1) % show_every == 0:
+                final_reward = play_game(env, agent, illegal_move_possible, opponent, True)
+            else:
+                final_reward = play_game(env, agent, illegal_move_possible, opponent)
             
             games_final_rewards.append(final_reward)
 
-            if ep % batchsize == 0:
+            if (ep+1) % batchsize == 0:
                 loss = update_agent(agent, optimizer)
                 losses.append(loss)
             
-            if ep % print_every == 0:
+            if (ep+1) % print_every == 0:
                 wins = [game_r == env.game.win for game_r in games_final_rewards]
                 illegals = [game_r == env.game.illegal for game_r in games_final_rewards]
+                defeats = [game_r == env.game.loss for game_r in games_final_rewards]
+                ties = [game_r == env.game.tie for game_r in games_final_rewards]
 
-                #print(f'Reinforce ep {ep} in gen {gen} done. Winrate: {np.mean(wins)}. Illegal move rate: {np.mean(illegals)}. Average Loss: {np.mean(losses)}')
-                run["metrics/Winrate"].log(np.mean(wins))
-                run["metrics/Illegal_rate"].log(np.mean(illegals))
-                run["metrics/Average_loss"].log(np.mean(losses))
+                neptune_run["metrics/Winrate"].log(np.mean(wins))
+                neptune_run["metrics/Illegal_rate"].log(np.mean(illegals))
+                neptune_run["metrics/Loss_rate"].log(np.mean(defeats))
+                neptune_run["metrics/Tie_rate"].log(np.mean(ties))
+
+                neptune_run["metrics/Average_loss"].log(np.mean(losses))
+                neptune_run["metrics/AverageProbWins"].log(np.mean([prob.cpu().detach().numpy() for prob, succes in zip(agent.probs, agent.game_succes) if succes]))
+                neptune_run["metrics/AverageProbLoss"].log(np.mean([prob.cpu().detach().numpy()  for prob, succes in zip(agent.probs, agent.game_succes) if not succes]))
 
                 del games_final_rewards[:]
                 del losses[:]
+                del agent.game_succes[:]
+                del agent.probs[:]
         
         # Saving the model as a new generation is beginning
         agent_name = name + f"_gen_{gen}.pth"
         agent_path = os.path.join(path, agent_name)
         torch.save(agent, agent_path)
-
-if __name__ == "__main__":
-    train_agent(env, agent, optimizer, generations, episodes_per_gen, batch_size, ["C:\Projects\ConnectFourRL\AgentParameters", "Large_test"], print_every=1000, show_every=100000000)
-    run.stop()

@@ -10,6 +10,10 @@ class CustomEnv(gym.Env):
     def __init__(self) -> None:
         self.game = connect_four()
         self.player = 1
+        self.win = 0
+        self.loss = 0
+        self.tie = 0
+        self.illegal = 0
         self.action_space = spaces.Discrete(self.game.columns)
         self.observation_space = spaces.Box(low = -1, high = 1, shape = (self.game.rows,self.game.columns), dtype = np.int0)
 
@@ -18,7 +22,7 @@ class CustomEnv(gym.Env):
         Resets the game in the environment and returns the observed game state
         '''
         del self.game
-        self.game = connect_four()
+        self.game = connect_four(self.win, self.loss, self.tie, self.illegal)
         obs = self.game.return_board()
         return obs
     
@@ -49,3 +53,13 @@ class CustomEnv(gym.Env):
     
     def configurePlayer(self, newPlayer):
         self.player = newPlayer
+
+    def configureRewards(self, win, loss, tie, illegal):
+        '''
+        Function to change the standard rewards in the game to something new
+        '''
+        self.win = win
+        self.loss = loss
+        self.tie = tie
+        self.illegal = illegal
+
