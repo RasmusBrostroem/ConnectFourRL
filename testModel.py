@@ -4,13 +4,13 @@ import gym
 import gym_game
 from agent import DirectPolicyAgent
 import random
+from minimaxAgent import MinimaxAgent
+import time
 
 model = DirectPolicyAgent("cpu")
 model.train(False)
-model = torch.load("AgentParameters/StackerBoi_gen_1.pth")
-# opponent = DirectPolicyAgent("cpu")
-# opponent.train(False)
-# opponent = torch.load("AgentParameters/StackerBoi_gen_25.pth")
+model = torch.load("AgentParameters/Defender_gen_49.pth")
+opponent = MinimaxAgent(max_depth=1)
 
 env = gym.make('ConnectFour-v0')
 
@@ -30,7 +30,7 @@ def play_game(env, agent, opponent = None, show_game = False):
         elif env.player == -1 and opponent is not None:
             with torch.no_grad():
                 for i in range(10):
-                    action = opponent.select_action(s*-1, choices)
+                    action = opponent.select_action(s * -1, choices)
                     if action in choices:
                         break
                     elif i == 9:
@@ -57,9 +57,12 @@ def play_game(env, agent, opponent = None, show_game = False):
 wins = 0
 ties = 0
 illegal = 0
-n_games = 3
+n_games = 100
+env.configureRewards(win=1, loss=0, tie=-1, illegal=-2)
+start = time.time()
 for i in range(n_games):
-    re = play_game(env, model, show_game=True)
+    print(i)
+    re = play_game(env, model, opponent, show_game=False)
     if re == env.game.win:
         wins += 1
     elif re == env.game.tie:
@@ -67,6 +70,8 @@ for i in range(n_games):
     elif re == env.game.illegal:
         illegal += 1
 
+end = time.time()
+print(f"Time: {end-start}")
 print(f"Winrate: {wins/n_games}")
 print(f"tierate: {ties/n_games}")
 print(f"illegal_rate: {illegal/n_games}")
