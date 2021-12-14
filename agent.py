@@ -105,3 +105,15 @@ class DirectPolicyAgent_large(DirectPolicyAgent):
         x = F.relu(x)
         x = self.final(x)
         return F.softmax(x, dim=0)
+
+class DirectPolicyAgent_mini(DirectPolicyAgent):
+    def __init__(self, device, gamma=0.99):
+        super().__init__(device, gamma=gamma)
+        self.L1 = nn.Linear(42, 300)
+        self.final = nn.Linear(300, 7)
+    
+    def forward(self, x):
+        x = self.L1(x)
+        x = F.relu(x)
+        x = self.final(x)
+        return F.softmax(x, dim=0)
