@@ -8,14 +8,17 @@ import torch.optim as optim
 from agent import DirectPolicyAgent, DirectPolicyAgent_large
 from training import train_agent
 
-models = pd.read_excel("AgentToTrain.xlsx")
+models = pd.read_excel("AgentToTrain.xlsx", engine='openpyxl')
 
 pg.init()
 
 env = gym.make('ConnectFour-v0')
 
 for i, model in models.iterrows():
-    if not pd.isnull(model["Neptune"]) or model["MinMax"]:
+    if not pd.isnull(model["Neptune"]) or not model["MinMax"]:
+        continue
+
+    if model["AgentSize"] != "Small": #Change when running RASMUS
         continue
 
     run = neptune.init(project="DLProject/ConnectFour")

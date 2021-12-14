@@ -4,6 +4,7 @@ import torch
 import random
 from agent import DirectPolicyAgent, DirectPolicyAgent_large
 import numpy as np
+from minimaxAgent import MinimaxAgent
 
 def play_game(env, agent, illegal_move_possible, opponent = None, show_game = False):
     s = env.reset()
@@ -91,6 +92,8 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
 
     path, name = path_name
 
+    minimax_agent = MinimaxAgent(max_depth=1)
+
     for gen in range(generations):
         opponents = None
         if not minimax:
@@ -100,8 +103,7 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
                 opponent_id = ep % 5
                 opponent = opponents[opponent_id]
             else:
-                #opponent = MinMax()
-                pass
+                opponent = minimax_agent
 
             if (ep+1) % show_every == 0:
                 final_reward = play_game(env, agent, illegal_move_possible, opponent, True)
