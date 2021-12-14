@@ -1,2 +1,2 @@
-ModelName;WinReward;LossReward;TieReward;IllegalReward;Generations;Episodes;BatchSize;LearningRate;WeightDecay;IllegalMove;RewardDecay;AgentSize;MinMax;Neptune
-AverageJoe;100;-50;35;-100;15;20000;50;0,001;0;False;0,99;Small;False;
+ModelName,WinReward,LossReward,TieReward,IllegalReward,Generations,Episodes,BatchSize,LearningRate,WeightDecay,IllegalMove,RewardDecay,AgentSize,MinMax,Neptune
+AverageJoe_sumLoss,100,-50,35,-100,15,20000,50,0.001,0,False,0.99,Small,False,
