@@ -53,7 +53,7 @@ def update_agent(agent, optimizer):
     #         for log_prob, reward, prob, succes 
     #         in zip(agent.saved_log_probs, agent.rewards, agent.probs, agent.game_succes)]
     
-    loss = torch.stack(loss).mean()
+    loss = torch.stack(loss).sum()
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
