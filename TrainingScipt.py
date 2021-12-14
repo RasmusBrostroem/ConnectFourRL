@@ -9,10 +9,10 @@ import numpy as np
 from agent import DirectPolicyAgent, DirectPolicyAgent_large, DirectPolicyAgent_mini
 from training import train_agent
 
-Excel_file_name = "Loss_mean_agents.csv"
+Excel_file_name = "loss_sum_models.csv"
 models = pd.read_csv(Excel_file_name, sep=",")
-models["IllegalMove"] = models["IllegalMove"].map({"False": False, "True": True})
-models["MinMax"] = models["MinMax"].map({"False": False, "True": True})
+#models["IllegalMove"] = models["IllegalMove"].map({"False": False, "True": True})
+#models["MinMax"] = models["MinMax"].map({"False": False, "True": True})
 
 pg.init()
 
@@ -21,8 +21,6 @@ env = gym.make('ConnectFour-v0')
 for i, model in models.iterrows():
     if not pd.isnull(model["Neptune"]):
         continue
-
-
 
     run = neptune.init(project="DLProject/ConnectFour")
 
