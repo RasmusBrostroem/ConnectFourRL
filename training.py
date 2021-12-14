@@ -2,6 +2,7 @@ import pygame as pg
 import os
 import torch
 import random
+import itertools
 from agent import DirectPolicyAgent, DirectPolicyAgent_large, DirectPolicyAgent_mini
 import numpy as np
 from minimaxAgent import MinimaxAgent
@@ -53,7 +54,7 @@ def update_agent(agent, optimizer):
     #         for log_prob, reward, prob, succes 
     #         in zip(agent.saved_log_probs, agent.rewards, agent.probs, agent.game_succes)]
     
-    loss = torch.stack(loss).sum()
+    loss = torch.stack(loss).mean()
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
@@ -97,18 +98,19 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
 
     path, name = path_name
 
-    minimax_agent = MinimaxAgent(max_depth=1)
+    minimax_agent = MinimaxAgent(max_depth=0)
 
     for gen in range(generations):
         opponents = None
         if not minimax:
             opponents = [load_agent(path, name, gen-i, agent_size, device) for i in range(5,0,-1)]
+        else:
+            opponents = [minimax_agent if i % 2 == 0 else None for i in range(3)]
+        opponent_iter = itertools.cycle(opponents)
         for ep in range(episodes_per_gen):
-            if type(opponents) == list:
-                opponent_id = ep % 5
-                opponent = opponents[opponent_id]
-            else:
-                opponent = minimax_agent
+            #opponent_id = ep % len(opponents)
+            #opponent = opponents[opponent_id]
+            opponent = next(opponent_iter)
 
             if (ep+1) % show_every == 0:
                 final_reward = play_game(env, agent, illegal_move_possible, opponent, True)
