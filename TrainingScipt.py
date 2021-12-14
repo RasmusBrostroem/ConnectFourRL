@@ -1,4 +1,3 @@
-import os
 import pandas as pd
 import gym
 import gym_game
@@ -10,7 +9,7 @@ import numpy as np
 from agent import DirectPolicyAgent, DirectPolicyAgent_large, DirectPolicyAgent_mini
 from training import train_agent
 
-Excel_file_name = "Loss_mean_agents.csv"
+Excel_file_name = "loss_sum_models.csv"
 models = pd.read_csv(Excel_file_name, sep=",")
 #models["IllegalMove"] = models["IllegalMove"].map({"False": False, "True": True})
 #models["MinMax"] = models["MinMax"].map({"False": False, "True": True})
@@ -36,11 +35,6 @@ for i, model in models.iterrows():
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         agent = DirectPolicyAgent_large(device, model["RewardDecay"])
     
-    if not pd.isna(model["PreTrain"]):
-        pre_train_path = os.path.join("AgentParameters", model["PreTrain"])
-        agent = torch.load(pre_train_path)
-        print(f"Loading pretrained network for: {pre_train_path}")
-
     agent.to(device)
     
     # Optimizer
