@@ -69,4 +69,4 @@ for i, model in models.iterrows():
     models.loc[i, "Neptune"] = run._short_id
 
     run.stop()
-    models.to_excel(Excel_file_name, index=False)
+    models.to_csv(Excel_file_name, index=False)
