@@ -2,14 +2,16 @@ import torch
 import pygame as pg
 import gym
 import gym_game
+import minimaxAgent
 from agent import DirectPolicyAgent
 import random
-
-model = DirectPolicyAgent("cpu")
-model.train(False)
-model = torch.load("AgentParameters/StackerBoi_gen_24.pth")
-
+from minimaxAgent import MinimaxAgent
+# model = DirectPolicyAgent("cpu")
+# model.train(False)
+# model = torch.load("AgentParameters/StackerBoi_gen_24.pth")
+model = MinimaxAgent(max_depth=2)
 env = gym.make('ConnectFour-v0')
+env.configureRewards(win=1, loss=-1, tie=0.1, illegal=-10)
 
 pg.init()
 
@@ -23,7 +25,7 @@ def play_game(env, agent, opponent = None, show_game = False):
 
         choices = env.game.legal_cols()
         if env.player == -1 and opponent is None:
-            action = int(input("Vælg kolonne: "))
+            action = int(input("Vælg kolonne: "))-1
         elif env.player == -1 and opponent is not None:
             with torch.no_grad():
                 for i in range(10):
@@ -33,7 +35,7 @@ def play_game(env, agent, opponent = None, show_game = False):
                     elif i == 9:
                         action = random.choice(choices)
         else:
-            action = agent.select_action(s, None)
+            action = agent.select_action(s, choices)
 
         s, r, done, _ = env.step(action)
 
@@ -50,5 +52,5 @@ def play_game(env, agent, opponent = None, show_game = False):
 
         env.configurePlayer(env.player * -1)
 
-for i in range(2):
+for i in range(1):
     re = play_game(env, model, show_game=True)
