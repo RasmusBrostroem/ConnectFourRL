@@ -3,6 +3,7 @@
 Tic-tac-toe with policy gradient desent
 https://medium.com/@carsten.friedrich/part-8-tic-tac-toe-with-policy-gradient-descent-da2496defc45
 https://spinningup.openai.com/en/latest/spinningup/rl_intro3.html
+http://rail.eecs.berkeley.edu/deeprlcourse-fa17/f17docs/lecture_4_policy_gradient.pdf
 '''
 
 '''
