@@ -2,7 +2,7 @@ import pygame as pg
 import os
 import torch
 import random
-from agent import DirectPolicyAgent, DirectPolicyAgent_large
+from agent import DirectPolicyAgent, DirectPolicyAgent_large, DirectPolicyAgent_mini
 import numpy as np
 from minimaxAgent import MinimaxAgent
 
@@ -73,6 +73,11 @@ def load_agent(path, name, gen, size, device):
     if os.path.isfile(opponent_path):
         if size == "Small":
             opponent = DirectPolicyAgent(device)
+            opponent.train(False)
+            opponent = torch.load(opponent_path)
+            opponent.to(device)
+        elif size == "Mini":
+            opponent = DirectPolicyAgent_mini(device)
             opponent.train(False)
             opponent = torch.load(opponent_path)
             opponent.to(device)

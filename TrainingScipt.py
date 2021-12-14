@@ -5,20 +5,21 @@ import neptune.new as neptune
 import pygame as pg
 import torch
 import torch.optim as optim
-from agent import DirectPolicyAgent, DirectPolicyAgent_large
+import numpy as np
+from agent import DirectPolicyAgent, DirectPolicyAgent_large, DirectPolicyAgent_mini
 from training import train_agent
 
-models = pd.read_excel("AgentToTrain.xlsx", engine='openpyxl')
+Excel_file_name = "Loss_mean_agents.csv"
+models = pd.read_csv(Excel_file_name, sep=",")
+models = models.astype({"IllegalMove": np.bool8, 
+                        "MinMax": np.bool8})
 
 pg.init()
 
 env = gym.make('ConnectFour-v0')
 
 for i, model in models.iterrows():
-    if not pd.isnull(model["Neptune"]) or not model["MinMax"]:
-        continue
-
-    if model["AgentSize"] != "Small": #Change when running RASMUS
+    if not pd.isnull(model["Neptune"]):
         continue
 
     run = neptune.init(project="DLProject/ConnectFour")
@@ -27,6 +28,9 @@ for i, model in models.iterrows():
     if model["AgentSize"] == "Small":
         device = "cpu"
         agent = DirectPolicyAgent(device, model["RewardDecay"])
+    elif model["AgentSize"] == "Mini":
+        device = "cpu"
+        agent = DirectPolicyAgent_mini(device, model["RewardDecay"])
     else:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         agent = DirectPolicyAgent_large(device, model["RewardDecay"])
@@ -65,4 +69,4 @@ for i, model in models.iterrows():
     models.loc[i, "Neptune"] = run._short_id
 
     run.stop()
-    models.to_excel("AgentToTrain.xlsx", index=False)
+    models.to_excel(Excel_file_name, index=False)
