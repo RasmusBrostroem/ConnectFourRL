@@ -137,21 +137,10 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
                 neptune_run["metrics/AverageProbWins"].log(np.mean([prob.cpu().detach().numpy() for prob, succes in zip(agent.probs, agent.game_succes) if succes]))
                 neptune_run["metrics/AverageProbLoss"].log(np.mean([prob.cpu().detach().numpy()  for prob, succes in zip(agent.probs, agent.game_succes) if not succes]))
 
-                test_rewards = []
-                for i in range(50):
-                    final_reward = play_game(env, agent, illegal_move_possible, test_agent)
-                    test_rewards.append(final_reward)
-                
-                test_wins = [game_r == env.game.win for game_r in test_rewards]
-                neptune_run["metrics/Test_Winrate"].log(np.mean(test_wins))
-
                 del games_final_rewards[:]
                 del losses[:]
                 del agent.game_succes[:]
                 del agent.probs[:]
-                del test_rewards[:]
-                del agent.saved_log_probs[:]
-                del agent.rewards[:]
 
         
         # Saving the model as a new generation is beginning
