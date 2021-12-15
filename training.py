@@ -105,11 +105,9 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
         if not minimax:
             opponents = [load_agent(path, name, gen-i, agent_size, device) for i in range(5,0,-1)]
         else:
-            opponents = [minimax_agent if i % 2 == 0 else None for i in range(3)]
+            opponents = [minimax_agent]
         opponent_iter = itertools.cycle(opponents)
         for ep in range(episodes_per_gen):
-            #opponent_id = ep % len(opponents)
-            #opponent = opponents[opponent_id]
             opponent = next(opponent_iter)
 
             if (ep+1) % show_every == 0:
@@ -142,6 +140,7 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
                 del losses[:]
                 del agent.game_succes[:]
                 del agent.probs[:]
+
         
         # Saving the model as a new generation is beginning
         agent_name = name + f"_gen_{gen}.pth"
