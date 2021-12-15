@@ -99,17 +99,16 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
     path, name = path_name
 
     minimax_agent = MinimaxAgent(max_depth=0)
+    test_agent = MinimaxAgent(max_depth=1)
 
     for gen in range(generations):
         opponents = None
         if not minimax:
             opponents = [load_agent(path, name, gen-i, agent_size, device) for i in range(5,0,-1)]
         else:
-            opponents = [minimax_agent if i % 2 == 0 else None for i in range(3)]
+            opponents = [minimax_agent if i == 0 else load_agent(path, name, gen-1, agent_size, device) for i in range(2)]
         opponent_iter = itertools.cycle(opponents)
         for ep in range(episodes_per_gen):
-            #opponent_id = ep % len(opponents)
-            #opponent = opponents[opponent_id]
             opponent = next(opponent_iter)
 
             if (ep+1) % show_every == 0:
@@ -138,10 +137,22 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
                 neptune_run["metrics/AverageProbWins"].log(np.mean([prob.cpu().detach().numpy() for prob, succes in zip(agent.probs, agent.game_succes) if succes]))
                 neptune_run["metrics/AverageProbLoss"].log(np.mean([prob.cpu().detach().numpy()  for prob, succes in zip(agent.probs, agent.game_succes) if not succes]))
 
+                test_rewards = []
+                for i in range(50):
+                    final_reward = play_game(env, agent, illegal_move_possible, test_agent)
+                    test_rewards.append(final_reward)
+                
+                test_wins = [game_r == env.game.win for game_r in test_rewards]
+                neptune_run["metrics/Test_Winrate"].log(np.mean(test_wins))
+
                 del games_final_rewards[:]
                 del losses[:]
                 del agent.game_succes[:]
                 del agent.probs[:]
+                del test_rewards[:]
+                del agent.saved_log_probs[:]
+                del agent.rewards[:]
+
         
         # Saving the model as a new generation is beginning
         agent_name = name + f"_gen_{gen}.pth"
