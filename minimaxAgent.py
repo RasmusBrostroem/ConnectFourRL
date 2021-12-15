@@ -8,7 +8,7 @@ from connectFourTest import connect_four
 
 
 class MinimaxAgent:
-    def __init__(self, max_depth=2):
+    def __init__(self, max_depth=0):
         self.game = connect_four(win=1, loss=-1, tie=0)
         self.max_depth = max_depth
         # self.game = gym.make('ConnectFour-v0')

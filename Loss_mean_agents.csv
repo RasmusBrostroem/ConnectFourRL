@@ -1,0 +1,12 @@
+ModelName,WinReward,LossReward,TieReward,IllegalReward,Generations,Episodes,BatchSize,LearningRate,WeightDecay,IllegalMove,RewardDecay,AgentSize,MinMax,Neptune,PreTrain
+Defender,50,-500,20,-50,50,20000,10,0.0001,0,False,0.99,Small,False,CON-81,
+DefenderV1,50,-500,20,-50,20,50000,100,0.0001,0.1,False,0.99,Large,False,CON-83,
+WinnerV2,500,-50,20,-100,100,10000,100,0.0001,0.05,False,0.9,Large,False,CON-84,
+RuleBoi,200,-50,50,-500,50,20000,50,0.0001,0.1,True,0.4,Small,False,CON-89,
+RuleBoiV2,200,-50,50,-500,20,50000,100,0.0001,0.1,True,0.9,Large,False,CON-90,
+AverageJoe,100,-50,35,-100,15,20000,50,0.001,0,False,0.99,Small,False,CON-94,
+AverageJoeV2,100,-50,35,-100,15,10000,50,0.001,0,False,0.99,Small,True,,AverageJoe_gen_14.pth
+BasicBitch,100,-100,50,-50,4,50000,50,0.001,0,False,0.99,Mini,True,,
+BasicBitchV2,100,-100,50,-50,4,50000,50,0.001,0,False,0.99,Small,True,,
+TequilaBoi,50,-100,35,-50,50,20000,50,0.001,0,False,0.99,Mini,False,,
+TequilaBoiV2,50,-100,35,-50,50,20000,50,0.001,0,False,0.99,Small,False,,

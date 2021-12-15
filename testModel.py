@@ -9,8 +9,12 @@ import time
 
 model = DirectPolicyAgent("cpu")
 model.train(False)
-model = torch.load("AgentParameters/Defender_gen_49.pth")
-opponent = MinimaxAgent(max_depth=1)
+model = torch.load("AgentParameters/AverageJoe_gen_14.pth")
+opponent = DirectPolicyAgent("cpu")
+opponent.train(False)
+opponent = torch.load("AgentParameters/AverageJoe_gen_14.pth")
+
+opponent = MinimaxAgent(max_depth=0)
 
 env = gym.make('ConnectFour-v0')
 
@@ -57,11 +61,10 @@ def play_game(env, agent, opponent = None, show_game = False):
 wins = 0
 ties = 0
 illegal = 0
-n_games = 100
+n_games = 10
 env.configureRewards(win=1, loss=0, tie=-1, illegal=-2)
 start = time.time()
 for i in range(n_games):
-    print(i)
     re = play_game(env, model, opponent, show_game=False)
     if re == env.game.win:
         wins += 1

@@ -3,6 +3,7 @@
 Tic-tac-toe with policy gradient desent
 https://medium.com/@carsten.friedrich/part-8-tic-tac-toe-with-policy-gradient-descent-da2496defc45
 https://spinningup.openai.com/en/latest/spinningup/rl_intro3.html
+http://rail.eecs.berkeley.edu/deeprlcourse-fa17/f17docs/lecture_4_policy_gradient.pdf
 '''
 
 '''
@@ -102,6 +103,18 @@ class DirectPolicyAgent_large(DirectPolicyAgent):
         x = self.L5(x)
         x = F.relu(x)
         x = self.L6(x)
+        x = F.relu(x)
+        x = self.final(x)
+        return F.softmax(x, dim=0)
+
+class DirectPolicyAgent_mini(DirectPolicyAgent):
+    def __init__(self, device, gamma=0.99):
+        super().__init__(device, gamma=gamma)
+        self.L1 = nn.Linear(42, 300)
+        self.final = nn.Linear(300, 7)
+    
+    def forward(self, x):
+        x = self.L1(x)
         x = F.relu(x)
         x = self.final(x)
         return F.softmax(x, dim=0)
