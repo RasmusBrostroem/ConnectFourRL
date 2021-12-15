@@ -99,14 +99,13 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
     path, name = path_name
 
     minimax_agent = MinimaxAgent(max_depth=0)
-    test_agent = MinimaxAgent(max_depth=1)
 
     for gen in range(generations):
         opponents = None
         if not minimax:
             opponents = [load_agent(path, name, gen-i, agent_size, device) for i in range(5,0,-1)]
         else:
-            opponents = [minimax_agent if i == 0 else load_agent(path, name, gen-1, agent_size, device) for i in range(2)]
+            opponents = [minimax_agent]
         opponent_iter = itertools.cycle(opponents)
         for ep in range(episodes_per_gen):
             opponent = next(opponent_iter)
