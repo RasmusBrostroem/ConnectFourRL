@@ -34,11 +34,14 @@ def tournamentfunc(model_list, name_list, file_name, n_games=1000):
 
 
 if __name__ == '__main__':
+    print("Start")
     model_list = []
-    name_list = ["Defender", "RuleBoi", "AverageJoe"]
-    for n in name_list:
-        model_list.append(load_agent("AgentParameters", n, 14, "Small", "cpu"))
+    name_list = ["AverageJoe", "Defender", "BasicBitch", "BasicBitchV2", "TequilaBoiV2", "AverageJoeV3", "AverageJoeV4", "LastHopeBoi"]
+    size_list = ["Small", "Small", "Mini", "Small", "Small", "Small", "Small", "Small"]
+    generation_list = [14, 49, 3, 3, 49, 11, 4, 4]
+    for name, size, gen in zip(name_list, size_list, generation_list):
+        model_list.append(load_agent("AgentParameters", name, gen, size, "cpu"))
 
     file_name = 'testtourn2.xlsx'
-    tournamentfunc(model_list, name_list, file_name, n_games=10)
+    tournamentfunc(model_list, name_list, file_name, n_games=100)
     
