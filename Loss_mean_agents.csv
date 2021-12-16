@@ -15,3 +15,4 @@ AverageJoeV4,100,-50,35,-100,30,10000,10,0.001,0,False,0.99,Small,True,CON-104,
 LastHopeBoi,100,-25,50,-100,5,10000,20,0.001,0.1,False,0.99,Small,True,CON-105,
 UltraBoi,100,-25,50,-100,90,10000,20,0.001,0.1,False,0.99,Small,True,CON-106,AverageJoe_gen_14.pth
 LastHopeBoiV2,100,-25,50,-100,66,10000,20,0.001,0.1,False,0.99,Small,True,CON-109,LastHopeBoi_gen_4.pth
+BasicBitchV3,100,-100,35,-100,15,20000,50,0.001,0,False,0.99,Small,False,,
