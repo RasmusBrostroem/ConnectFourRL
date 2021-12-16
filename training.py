@@ -103,7 +103,7 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
     for gen in range(generations):
         opponents = None
         if not minimax:
-            opponents = [load_agent(path, name, gen-i, agent_size, device) for i in range(5,0,-1)]
+            opponents = [load_agent(path, name, gen-i+14, agent_size, device) for i in range(5,0,-1)]
         else:
             opponents = [minimax_agent]
         opponent_iter = itertools.cycle(opponents)
@@ -144,6 +144,6 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
 
         
         # Saving the model as a new generation is beginning
-        agent_name = name + f"_gen_{gen}.pth"
+        agent_name = name + f"_gen_{gen+14}.pth"
         agent_path = os.path.join(path, agent_name)
         torch.save(agent, agent_path)
