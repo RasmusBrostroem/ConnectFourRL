@@ -13,4 +13,4 @@ TequilaBoiV2,50,-100,35,-50,50,20000,50,0.001,0,False,0.99,Small,False,CON-101,
 AverageJoeV3,100,-50,35,-100,30,10000,1,0.001,0,False,0.99,Small,True,CON-102,
 AverageJoeV4,100,-50,35,-100,30,10000,10,0.001,0,False,0.99,Small,True,CON-104,
 LastHopeBoi,100,-25,50,-100,5,10000,20,0.001,0.1,False,0.99,Small,True,CON-105,
-UltraBoi,100,-25,50,-100,150,10000,20,0.001,0.1,False,0.99,Small,True,,AverageJoe_gen_14.pth
+UltraBoi,100,-25,50,-100,90,10000,20,0.001,0.1,False,0.99,Small,True,,AverageJoe_gen_14.pth
