@@ -103,7 +103,7 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
     for gen in range(generations):
         opponents = None
         if not minimax:
-            opponents = [load_agent(path, name, gen-i+14, agent_size, device) for i in range(5,0,-1)]
+            opponents = [load_agent(path, name, gen-i, agent_size, device) for i in range(5,0,-1)]
         else:
             opponents = [minimax_agent]
         opponent_iter = itertools.cycle(opponents)
@@ -137,13 +137,24 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
                 neptune_run["metrics/AverageProbWins"].log(np.mean([prob.cpu().detach().numpy() for prob, succes in zip(agent.probs, agent.game_succes) if succes]))
                 neptune_run["metrics/AverageProbLoss"].log(np.mean([prob.cpu().detach().numpy()  for prob, succes in zip(agent.probs, agent.game_succes) if not succes]))
 
+                test_rewards = []
+                for i in range(100):
+                    re = play_game(env, agent, illegal_move_possible, minimax_agent)
+                    test_rewards.append(re)
+                
+                test_wins = [game_r == env.game.win for game_r in test_rewards]
+                neptune_run["metrics/test_winrate"].log(np.mean(test_wins))
+
                 del games_final_rewards[:]
                 del losses[:]
                 del agent.game_succes[:]
                 del agent.probs[:]
+                del agent.rewards[:]
+                del agent.saved_log_probs[:]
+                del test_rewards[:]
 
         
         # Saving the model as a new generation is beginning
-        agent_name = name + f"_gen_{gen+14}.pth"
+        agent_name = name + f"_gen_{gen}.pth"
         agent_path = os.path.join(path, agent_name)
         torch.save(agent, agent_path)
