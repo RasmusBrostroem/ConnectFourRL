@@ -120,6 +120,7 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
             if (ep+1) % batchsize == 0:
                 loss = update_agent(agent, optimizer)
                 losses.append(loss)
+                neptune_run["metrics/Batch_loss"].log(loss)
             
             if (ep+1) % print_every == 0:
                 wins = [game_r == env.game.win for game_r in games_final_rewards]
