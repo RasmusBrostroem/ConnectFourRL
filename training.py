@@ -103,7 +103,7 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
     for gen in range(generations):
         opponents = None
         if not minimax:
-            opponents = [load_agent(path, name, gen-i, agent_size, device) for i in range(5,0,-1)]
+            opponents = [load_agent(path, name, gen-i, agent_size, device) for i in range(3,0,-1)]
         else:
             opponents = [minimax_agent]
         opponent_iter = itertools.cycle(opponents)
@@ -120,7 +120,7 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
             if (ep+1) % batchsize == 0:
                 loss = update_agent(agent, optimizer)
                 losses.append(loss)
-                neptune_run["metrics/Batch_loss"].log(loss)
+                neptune_run["metrics/Batch_loss"].log(np.mean(loss))
             
             if (ep+1) % print_every == 0:
                 wins = [game_r == env.game.win for game_r in games_final_rewards]
