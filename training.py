@@ -158,3 +158,9 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
         agent_name = name + f"_gen_{gen}.pth"
         agent_path = os.path.join(path, agent_name)
         torch.save(agent, agent_path)
+
+        # Deleting the model parameters five generations back
+        agent_gen5_name = name + f"_gen_{gen-5}.pth"
+        agent_gen5_path = os.path.join(path, agent_gen5_name)
+        if os.path.isfile(agent_gen5_path):
+            os.remove(agent_gen5_path)
