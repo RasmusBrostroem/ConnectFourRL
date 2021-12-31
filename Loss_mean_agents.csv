@@ -18,3 +18,5 @@ LastHopeBoiV2,100,-25,50,-100,66,10000,20,0.001,0.1,False,0.99,Small,True,CON-10
 BasicBitchV3,100,-100,35,-100,15,20000,50,0.001,0,False,0.99,Small,False,CON-113,
 AverageJoe,100,-50,35,-100,100,20000,50,0.001,0,False,0.99,Small,False,CON-114,AverageJoe_gen_14.pth
 HailMaryBoi,100,-80,50,-1000,2170,1000,20,0.001,0,False,0.99,Small,False,CON-115,
+ModerateBoi,100,-100,50,-1000,4340,1000,20,0.001,0,False,0.99,Small,False,CON-127,
+TieBoi,50,-60,100,-10000,4340,1000,20,0.001,0,False,0.99,Small,False,CON-128,
