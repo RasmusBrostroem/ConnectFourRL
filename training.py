@@ -1,4 +1,5 @@
 import pygame as pg
+import keyboard
 import os
 import torch
 import random
@@ -7,11 +8,20 @@ from agent import DirectPolicyAgent, DirectPolicyAgent_large, DirectPolicyAgent_
 import numpy as np
 from minimaxAgent import MinimaxAgent
 
+pg.init()
+
 def play_game(env, agent, illegal_move_possible, opponent = None, show_game = False):
     s = env.reset()
     env.configurePlayer(random.choice([-1,1]))
 
     while True:
+        if keyboard.is_pressed("z"):
+            show_game = False
+            pg.display.quit()
+        
+        if keyboard.is_pressed("x"):
+            show_game = True
+        
         if show_game:
             env.render()
 
@@ -47,6 +57,8 @@ def play_game(env, agent, illegal_move_possible, opponent = None, show_game = Fa
 
 def update_agent(agent, optimizer):
     loss = []
+    # rewards = torch.tensor(agent.rewards)
+    # norm_rewards = (rewards - rewards.mean())/(rewards.std()+1e-6)
     for log_prob, reward in zip(agent.saved_log_probs, agent.rewards):
         loss.append(-log_prob * reward)
 
@@ -103,7 +115,7 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
     for gen in range(generations):
         opponents = None
         if not minimax:
-            opponents = [load_agent(path, name, gen-i, agent_size, device) for i in range(3,0,-1)]
+            opponents = [load_agent(path, name, gen-1, agent_size, device)]
         else:
             opponents = [minimax_agent]
         opponent_iter = itertools.cycle(opponents)
