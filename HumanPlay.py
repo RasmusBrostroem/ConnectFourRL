@@ -1,9 +1,9 @@
 import torch
 import pygame as pg
 import gym
-import gym_game
+import game
 import minimaxAgent
-from agent import DirectPolicyAgent
+from game.players import DirectPolicyAgent
 import random
 from minimaxAgent import MinimaxAgent
 # model = DirectPolicyAgent("cpu")

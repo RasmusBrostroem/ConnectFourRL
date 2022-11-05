@@ -6,7 +6,7 @@ from pygame.display import update
 import torch
 import random
 import itertools
-from agent import DirectPolicyAgent, DirectPolicyAgent_large, DirectPolicyAgent_mini
+from game.players import DirectPolicyAgent, DirectPolicyAgent_large, DirectPolicyAgent_mini
 import numpy as np
 from minimaxAgent import MinimaxAgent
 

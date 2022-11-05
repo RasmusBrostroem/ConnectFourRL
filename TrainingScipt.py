@@ -1,13 +1,13 @@
 import os
 import pandas as pd
 import gym
-import gym_game
+import game
 import neptune.new as neptune
 import pygame as pg
 import torch
 import torch.optim as optim
 import numpy as np
-from agent import DirectPolicyAgent, DirectPolicyAgent_large, DirectPolicyAgent_mini
+from game.players import DirectPolicyAgent, DirectPolicyAgent_large, DirectPolicyAgent_mini
 from training import train_agent
 
 Excel_file_name = "Loss_mean_agents.csv"

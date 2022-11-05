@@ -2,19 +2,13 @@ import pygame as pg
 import numpy as np 
 
 class connect_four():
-    def __init__(self, win = 0, loss = 0, tie = 0, illegal = 0):
+    def __init__(self):
         # The attributes to display the game
         self.size = 700
         self.rows = 6
         self.columns = 7
 
         self.board = np.zeros((6,7))
-
-        #Evaluate attributes
-        self.win = win
-        self.loss = loss
-        self.tie = tie
-        self.illegal = illegal
     
     def draw_board(self, reward):
         '''

@@ -1,7 +1,8 @@
 from testModel import matchup
 from minimaxAgent import MinimaxAgent
-from agent import DirectPolicyAgent
+from game.players import DirectPolicyAgent, Player
 import torch
+import random
 
 # model = DirectPolicyAgent("cpu")
 # model.train(False)
@@ -12,8 +13,15 @@ import torch
 # opponent = MinimaxAgent(max_depth=0)
 
 # matchup(model, opponent, 4, True)
+a = DirectPolicyAgent("gpu")
+b = Player(-1, 10, 10, 10, 10, "grp")
 
 
-test = DirectPolicyAgent("cpu")
+test = [a,b]
 
-print(isinstance(test, MinimaxAgent))
+t = random.choice(test)
+
+if t is a or t is b:
+    print("Noiuce")
+else:
+    print("Fuck")
