@@ -1,5 +1,8 @@
+from re import A
 import pygame as pg
+import keyboard
 import os
+from pygame.display import update
 import torch
 import random
 import itertools
@@ -7,11 +10,20 @@ from agent import DirectPolicyAgent, DirectPolicyAgent_large, DirectPolicyAgent_
 import numpy as np
 from minimaxAgent import MinimaxAgent
 
+pg.init()
+
 def play_game(env, agent, illegal_move_possible, opponent = None, show_game = False):
     s = env.reset()
     env.configurePlayer(random.choice([-1,1]))
 
     while True:
+        if keyboard.is_pressed("z"):
+            show_game = False
+            pg.display.quit()
+        
+        if keyboard.is_pressed("x"):
+            show_game = True
+        
         if show_game:
             env.render()
 
@@ -19,8 +31,7 @@ def play_game(env, agent, illegal_move_possible, opponent = None, show_game = Fa
         if env.player == -1 and opponent is None:
             action = random.choice(choices)
         elif env.player == -1 and opponent is not None:
-            with torch.no_grad():
-                action = opponent.select_action(s*-1, choices)
+            action = opponent.select_action(s*-1, choices)
         else:
             if illegal_move_possible:
                 action = agent.select_action(s, None)
@@ -33,20 +44,35 @@ def play_game(env, agent, illegal_move_possible, opponent = None, show_game = Fa
             if show_game:
                 env.render(r)
                 pg.display.quit()
-                
+            
             agent.rewards.append(r)
             agent.game_succes.append(None)
             agent.calculate_rewards(env)
+            if not isinstance(opponent, MinimaxAgent):
+                if r == env.game.tie:
+                    opponent.rewards.append(r)
+                elif r == env.game.loss:
+                    opponent.rewards.append(env.game.win)
+                elif r == env.game.win:
+                    opponent.rewards.append(env.game.loss)
+                opponent.game_succes.append(None)
+                opponent.calculate_rewards(env)
 
             return r
         elif env.player == 1:
             agent.rewards.append(r)
             agent.game_succes.append(None)
+        elif env.player == -1:
+            if not isinstance(opponent, MinimaxAgent):
+                opponent.rewards.append(r)
+                opponent.game_succes.append(None)
 
         env.configurePlayer(env.player * -1)
 
 def update_agent(agent, optimizer):
     loss = []
+    # rewards = torch.tensor(agent.rewards)
+    # norm_rewards = (rewards - rewards.mean())/(rewards.std()+1e-6)
     for log_prob, reward in zip(agent.saved_log_probs, agent.rewards):
         loss.append(-log_prob * reward)
 
@@ -100,15 +126,24 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
 
     minimax_agent = MinimaxAgent(max_depth=0)
 
+    # if not minimax:
+    #     #opponents = [load_agent(path, name, gen-1, agent_size, device)]
+    #     if agent_size == "Mini":
+    #         opponents = [DirectPolicyAgent_mini(device)]
+    #     elif agent_size == "Small":
+    #         opponents = [DirectPolicyAgent(device)]
+    #     else:
+    #         opponents = [DirectPolicyAgent_large(device)]
+    # else:
+    #     opponents = [minimax_agent]
+
+    # opponent_iter = itertools.cycle(opponents)
+
+    opponent = DirectPolicyAgent(device)
+
     for gen in range(generations):
-        opponents = None
-        if not minimax:
-            opponents = [load_agent(path, name, gen-i, agent_size, device) for i in range(5,0,-1)]
-        else:
-            opponents = [minimax_agent]
-        opponent_iter = itertools.cycle(opponents)
         for ep in range(episodes_per_gen):
-            opponent = next(opponent_iter)
+            #opponent = next(opponent_iter)
 
             if (ep+1) % show_every == 0:
                 final_reward = play_game(env, agent, illegal_move_possible, opponent, True)
@@ -120,6 +155,10 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
             if (ep+1) % batchsize == 0:
                 loss = update_agent(agent, optimizer)
                 losses.append(loss)
+                neptune_run["metrics/Batch_loss"].log(np.mean(loss))
+                
+                update_agent(opponent, optimizer)
+                
             
             if (ep+1) % print_every == 0:
                 wins = [game_r == env.game.win for game_r in games_final_rewards]
@@ -136,13 +175,35 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
                 neptune_run["metrics/AverageProbWins"].log(np.mean([prob.cpu().detach().numpy() for prob, succes in zip(agent.probs, agent.game_succes) if succes]))
                 neptune_run["metrics/AverageProbLoss"].log(np.mean([prob.cpu().detach().numpy()  for prob, succes in zip(agent.probs, agent.game_succes) if not succes]))
 
+                test_rewards = []
+                for i in range(100):
+                    re = play_game(env, agent, illegal_move_possible, minimax_agent)
+                    test_rewards.append(re)
+                
+                test_wins = [game_r == env.game.win for game_r in test_rewards]
+                neptune_run["metrics/test_winrate"].log(np.mean(test_wins))
+
                 del games_final_rewards[:]
                 del losses[:]
                 del agent.game_succes[:]
                 del agent.probs[:]
+                del agent.rewards[:]
+                del agent.saved_log_probs[:]
+                del test_rewards[:]
+
+                del opponent.game_succes[:]
+                del opponent.probs[:]
+                del opponent.rewards[:]
+                del opponent.saved_log_probs[:]
 
         
         # Saving the model as a new generation is beginning
         agent_name = name + f"_gen_{gen}.pth"
         agent_path = os.path.join(path, agent_name)
         torch.save(agent, agent_path)
+
+        # Deleting the model parameters five generations back
+        agent_gen5_name = name + f"_gen_{gen-5}.pth"
+        agent_gen5_path = os.path.join(path, agent_gen5_name)
+        if os.path.isfile(agent_gen5_path):
+            os.remove(agent_gen5_path)

@@ -44,7 +44,7 @@ for i, model in models.iterrows():
     agent.to(device)
     
     # Optimizer
-    optimizer = optim.Adam(agent.parameters(), lr=model["LearningRate"], weight_decay=model["WeightDecay"])
+    optimizer = optim.RMSprop(agent.parameters(), lr=model["LearningRate"], weight_decay=model["WeightDecay"])
 
     # Environment
     env.configureRewards(win = model["WinReward"], loss = model["LossReward"], tie = model["TieReward"], illegal = model["IllegalReward"])
