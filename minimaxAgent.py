@@ -11,7 +11,6 @@ class MinimaxAgent:
     def __init__(self, max_depth=0):
         self.game = connect_four(win=1, loss=-1, tie=0)
         self.max_depth = max_depth
-        # self.game = gym.make('ConnectFour-v0')
 
     def select_action(self, board, legal_choices):
         board = np.flip(np.copy(board), 0)

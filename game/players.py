@@ -25,7 +25,60 @@ import numpy as np
 import random
 
 
-class DirectPolicyAgent(nn.Module):
+class Player():
+    #Random player that has the functionalities that should be modified by agents
+    def __init__(self, _playerPiece, _winReward, _lossReward, _tieReward, _illegalReward, _device, _gamma = 0.99) -> None:
+        self.rewardValues = {"win": _winReward,
+                            "loss": _lossReward,
+                            "tie": _tieReward,
+                            "illegal": _illegalReward,
+                            "notEnded": 0}
+
+        self.playerPiece = _playerPiece
+        self.device = _device
+        self.gamma = _gamma
+        self.saved_log_probs = []
+        self.game_succes = [] # True if win or tie, false if lose or illegal
+        self.probs = []
+        self.rewards = []
+    
+    def select_action(self, board, legal_moves):
+        return random.choice(legal_moves)
+    
+    def calculate_rewards(self):
+        final_reward = self.rewards[-1]
+        for i, val in enumerate(reversed(self.rewards)):
+            if val != 0 and i != 0:
+                break
+            
+            weighted_reward = self.gamma**i * final_reward
+            self.rewards[len(self.rewards)-(i+1)] = weighted_reward
+            if final_reward == self.rewardValues["loss"] or final_reward == self.rewardValues["illegal"]:
+                self.game_succes[len(self.game_succes)-(i+1)] = False
+            else:
+                self.game_succes[len(self.game_succes)-(i+1)] = True
+    
+    def reset_rewards(self):
+        del self.game_succes[:]
+        del self.probs[:]
+        del self.rewards[:]
+        del self.saved_log_probs[:]
+
+    def update_agent(self, optimizer = None):
+        #Insert code to update agent here:
+
+        #Delete lists after use
+        del self.rewards[:]
+        del self.saved_log_probs[:]
+        pass
+
+    def load_params(self, path: str) -> None:
+        pass
+
+    def assign_reward(self, gameState: str) -> None:
+        self.rewards.append(self.rewardValues[gameState])
+
+class DirectPolicyAgent(nn.Module, Player):
     def __init__(self, device, gamma = 0.99):
         super(DirectPolicyAgent, self).__init__()
         self.L1 = nn.Linear(42, 200)
@@ -54,17 +107,17 @@ class DirectPolicyAgent(nn.Module):
         x = self.final(x)
         return F.softmax(x, dim=0)
 
-    def select_action(self, x, legal_moves):
-        x = x.copy()
-        x = torch.from_numpy(x).float().flatten()
-        x = x.to(self.device)
-        probs = self.forward(x)
-        m = Categorical(probs.to("cpu"))
-        action = m.sample()
+    def select_action(self, board, legal_moves):
+        board = board * self.playerPiece
+        board_vector = torch.from_numpy(board).float().flatten()
+        board_vector = board_vector.to(self.device)
+        probs = self.forward(board_vector)
+        move = Categorical(probs.to("cpu"))
+        action = move.sample()
         if legal_moves and action not in legal_moves:
             action = torch.tensor(random.choice(legal_moves))
 
-        self.saved_log_probs.append(m.log_prob(action))
+        self.saved_log_probs.append(move.log_prob(action))
         self.probs.append(probs[action])
         return action.to("cpu")
 

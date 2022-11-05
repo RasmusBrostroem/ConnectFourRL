@@ -2,8 +2,8 @@ from numpy import show_config
 import torch
 import pygame as pg
 import gym
-import gym_game
-from agent import DirectPolicyAgent
+import game
+from game.players import DirectPolicyAgent
 import random
 from minimaxAgent import MinimaxAgent
 import time
