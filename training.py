@@ -1,6 +1,8 @@
+from re import A
 import pygame as pg
 import keyboard
 import os
+from pygame.display import update
 import torch
 import random
 import itertools
@@ -29,8 +31,7 @@ def play_game(env, agent, illegal_move_possible, opponent = None, show_game = Fa
         if env.player == -1 and opponent is None:
             action = random.choice(choices)
         elif env.player == -1 and opponent is not None:
-            with torch.no_grad():
-                action = opponent.select_action(s*-1, choices)
+            action = opponent.select_action(s*-1, choices)
         else:
             if illegal_move_possible:
                 action = agent.select_action(s, None)
@@ -43,15 +44,28 @@ def play_game(env, agent, illegal_move_possible, opponent = None, show_game = Fa
             if show_game:
                 env.render(r)
                 pg.display.quit()
-                
+            
             agent.rewards.append(r)
             agent.game_succes.append(None)
             agent.calculate_rewards(env)
+            if not isinstance(opponent, MinimaxAgent):
+                if r == env.game.tie:
+                    opponent.rewards.append(r)
+                elif r == env.game.loss:
+                    opponent.rewards.append(env.game.win)
+                elif r == env.game.win:
+                    opponent.rewards.append(env.game.loss)
+                opponent.game_succes.append(None)
+                opponent.calculate_rewards(env)
 
             return r
         elif env.player == 1:
             agent.rewards.append(r)
             agent.game_succes.append(None)
+        elif env.player == -1:
+            if not isinstance(opponent, MinimaxAgent):
+                opponent.rewards.append(r)
+                opponent.game_succes.append(None)
 
         env.configurePlayer(env.player * -1)
 
@@ -112,15 +126,24 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
 
     minimax_agent = MinimaxAgent(max_depth=0)
 
+    # if not minimax:
+    #     #opponents = [load_agent(path, name, gen-1, agent_size, device)]
+    #     if agent_size == "Mini":
+    #         opponents = [DirectPolicyAgent_mini(device)]
+    #     elif agent_size == "Small":
+    #         opponents = [DirectPolicyAgent(device)]
+    #     else:
+    #         opponents = [DirectPolicyAgent_large(device)]
+    # else:
+    #     opponents = [minimax_agent]
+
+    # opponent_iter = itertools.cycle(opponents)
+
+    opponent = DirectPolicyAgent(device)
+
     for gen in range(generations):
-        opponents = None
-        if not minimax:
-            opponents = [load_agent(path, name, gen-1, agent_size, device)]
-        else:
-            opponents = [minimax_agent]
-        opponent_iter = itertools.cycle(opponents)
         for ep in range(episodes_per_gen):
-            opponent = next(opponent_iter)
+            #opponent = next(opponent_iter)
 
             if (ep+1) % show_every == 0:
                 final_reward = play_game(env, agent, illegal_move_possible, opponent, True)
@@ -133,6 +156,9 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
                 loss = update_agent(agent, optimizer)
                 losses.append(loss)
                 neptune_run["metrics/Batch_loss"].log(np.mean(loss))
+                
+                update_agent(opponent, optimizer)
+                
             
             if (ep+1) % print_every == 0:
                 wins = [game_r == env.game.win for game_r in games_final_rewards]
@@ -164,6 +190,11 @@ def train_agent(env, agent, optimizer, neptune_run, generations, episodes_per_ge
                 del agent.rewards[:]
                 del agent.saved_log_probs[:]
                 del test_rewards[:]
+
+                del opponent.game_succes[:]
+                del opponent.probs[:]
+                del opponent.rewards[:]
+                del opponent.saved_log_probs[:]
 
         
         # Saving the model as a new generation is beginning

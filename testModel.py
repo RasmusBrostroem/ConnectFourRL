@@ -1,3 +1,4 @@
+from numpy import show_config
 import torch
 import pygame as pg
 import gym
@@ -63,14 +64,14 @@ def matchup(model, opponent, n_games=1000, show_game=False):
 if __name__ == '__main__':
     model = DirectPolicyAgent("cpu")
     model.train(False)
-    model = torch.load("AgentParameters/AverageJoe_gen_14.pth")
-    opponent = DirectPolicyAgent("cpu")
-    opponent.train(False)
-    opponent = torch.load("AgentParameters/AverageJoe_gen_14.pth")
-    #opponent = MinimaxAgent(max_depth=0)
-    n_games = 100
+    model = torch.load("AgentParameters/PlzBoi_gen_4339.pth")
+    # opponent = DirectPolicyAgent("cpu")
+    # opponent.train(False)
+    # opponent = torch.load("AgentParameters/AverageJoe_gen_14.pth")
+    opponent = MinimaxAgent(max_depth=0)
+    n_games = 3
     start = time.time()
-    wins, ties, illegal = matchup(model, opponent, n_games)
+    wins, ties, illegal = matchup(model, opponent, n_games, show_game=True)
     end = time.time()
     print(f"Time: {end-start}")
     print(f"Winrate: {wins/n_games}")
