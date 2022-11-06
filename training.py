@@ -1,4 +1,3 @@
-from re import A
 import pygame as pg
 import keyboard
 import os
