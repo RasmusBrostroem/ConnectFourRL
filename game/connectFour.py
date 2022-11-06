@@ -59,6 +59,9 @@ class connect_four():
         #     screen.blit(label, (self.size/2-label.get_width()/2,square_size/2-label.get_height()/2))
 
         pg.display.update()
+    
+    def close_board(self) -> None:
+        pg.display.quit()
 
     def return_board(self) -> None:
         '''

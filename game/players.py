@@ -26,8 +26,11 @@ import random
 
 
 class Player():
-    #Random player that has the functionalities that should be modified by agents
-    def __init__(self, _playerPiece, _winReward, _lossReward, _tieReward, _illegalReward, _device, _gamma = 0.99) -> None:
+    '''
+    A player class that will act like a template for the rest of the players/agents.
+    This player is a random player that just chooses a random valid column to place its piece in
+    '''
+    def __init__(self, _playerPiece, _winReward, _lossReward, _tieReward, _illegalReward, _device, _gamma = 0.8) -> None:
         self.rewardValues = {"win": _winReward,
                             "loss": _lossReward,
                             "tie": _tieReward,
@@ -42,10 +45,13 @@ class Player():
         self.probs = []
         self.rewards = []
     
-    def select_action(self, board, legal_moves):
-        return random.choice(legal_moves)
-    
-    def calculate_rewards(self):
+    def select_action(self, board: np.matrix, legal_moves: list = []) -> int:
+        '''
+        Returnt a random valid column from the board to place the piece in
+        '''
+        return random.choice([col for col, val in enumerate(board[0]) if val == 0])
+
+    def calculate_rewards(self) -> None:
         final_reward = self.rewards[-1]
         for i, val in enumerate(reversed(self.rewards)):
             if val != 0 and i != 0:
@@ -53,6 +59,8 @@ class Player():
             
             weighted_reward = self.gamma**i * final_reward
             self.rewards[len(self.rewards)-(i+1)] = weighted_reward
+            
+            # Assigns the game_success (false if loss or illegal, true if tie or win) for all moves played in a game
             if final_reward == self.rewardValues["loss"] or final_reward == self.rewardValues["illegal"]:
                 self.game_succes[len(self.game_succes)-(i+1)] = False
             else:
@@ -64,19 +72,22 @@ class Player():
         del self.rewards[:]
         del self.saved_log_probs[:]
 
-    def update_agent(self, optimizer = None):
+    def update_agent(self, optimizer = None) -> None:
         #Insert code to update agent here:
 
         #Delete lists after use
         del self.rewards[:]
         del self.saved_log_probs[:]
-        pass
 
     def load_params(self, path: str) -> None:
         pass
 
-    def assign_reward(self, gameState: str) -> None:
-        self.rewards.append(self.rewardValues[gameState])
+    def assign_reward(self, gameState: str, own_move: bool) -> None:
+        if own_move:
+            self.rewards.append(self.rewardValues[gameState])
+            self.game_succes.append(None)
+        else:
+            self.rewards[-1] = self.rewardValues[gameState]
 
 class DirectPolicyAgent(nn.Module, Player):
     def __init__(self, device, gamma = 0.99):
