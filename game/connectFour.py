@@ -19,9 +19,11 @@ class connect_four():
         blue = (0,0,255)
         red = (255,0,0)
         yellow = (255,255,0)
-        screen = pg.display.set_mode((self.size, self.size))
 
-        square_size = np.ceil(self.size/self.columns)
+        square_size = min(np.ceil(self.size/self.columns),np.ceil(self.size/self.rows))
+        
+        screen = pg.display.set_mode((square_size * self.columns, square_size * (self.rows+1)))
+
         radius = int(square_size/2-5)
         flipped_board = np.flip(self.board,0)
 
@@ -149,7 +151,7 @@ class connect_four():
             2. If the player makes a move that ties the players
             3. If the player makes an illegal move
         '''
-        return self.winning_move() or self.is_tie() or not self.is_legal(column=column)
+        return not self.is_legal(column=column) or self.winning_move() or self.is_tie()
     
     # def evaluate(self, player: int, legal: bool):
     #     '''
