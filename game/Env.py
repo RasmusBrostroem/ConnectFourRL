@@ -3,17 +3,29 @@ import pygame as pg
 import random
 import sys
 import keyboard
+from types import SimpleNamespace
+
+def test(b, *a, **c):
+    print(list(zip(b, a)))
 
 class Env():
-    def __init__(self, _player1, _player2, _allow_illegal_moves: bool = False) -> None:
+    def __init__(self, _player1, _player2, _allow_illegal_moves: bool = False, **kwargs) -> None:
+        # Variables with defaults that are not necessary for the game or environment
+        params = {"rows": 6,
+                  "columns": 7,
+                  "game_size": 700,
+                  "win_screen_delay": 2000}
+        params.update(kwargs) # Updating the parameters if any was given
+        self.params = SimpleNamespace(**params) #Making "dot notation" possible
+
         pg.init()
-        self.game = connect_four()
+        self.game = connect_four(_size = self.params.game_size, _rows = self.params.rows, _columns = self.params.columns)
         self.allow_illegal_moves = _allow_illegal_moves
         self.player1 = _player1
         self.player2 = _player2
         #currentPlayer controls whether it is player1 or player2 playing
         self.currentPlayer = None
-        self.display_game = True
+        self.display_game = True # This can be set by clicking on "x" or "z" on the keyboard
 
     def reset(self) -> None:
         '''
@@ -25,6 +37,7 @@ class Env():
         pg.init() # if we call pg.display.quit in self.game.close_board() then we also close pygame, so we cant use pg.event.get() after. Therefore, we have to init pg every time
         for event in pg.event.get():
             if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
+                #TODO: save players before quitting
                 pg.quit()
                 sys.exit()
             if event.type == pg.KEYDOWN and event.key == pg.K_x:
@@ -84,7 +97,7 @@ class Env():
             if self.currentPlayer is self.player1:
                 self.player2.assign_reward(gameState = "tie", own_move = False)
             else:
-                self.player1.assign_reward("tie", own_move = False)
+                self.player1.assign_reward(game_state = "tie", own_move = False)
         elif game_state == "illegal": #TODO change the reward for the opponent when the other player makes an illegal move
             if self.currentPlayer is self.player1:
                 self.player2.assign_reward(gameState = "tie", own_move = False)
@@ -93,7 +106,7 @@ class Env():
         
         return self.game.is_done(column = col_choice)
 
-    def render(self, delay = 500):
+    def render(self, delay = 1000):
         '''
         Renders the current state of the game, so the viewer can watch the game play out
         '''
@@ -106,7 +119,7 @@ class Env():
         else:
             self.currentPlayer = self.player1
 
-    def play_game(self):
+    def play_game(self) -> None:
         self.reset()
         self.currentPlayer = random.choice([self.player1, self.player2])
 
@@ -120,7 +133,8 @@ class Env():
             if done:
                 self.player1.calculate_rewards()
                 self.player2.calculate_rewards()
-                self.render(delay=2000)
+                if self.display_game:
+                    self.render(delay=self.params.win_screen_delay)
                 break
             
             self.change_player()

@@ -47,7 +47,7 @@ class Player():
     
     def select_action(self, board: np.matrix, legal_moves: list = []) -> int:
         '''
-        Returnt a random valid column from the board to place the piece in
+        Return a random valid column from the board to place the piece in
         '''
         return random.choice([col for col, val in enumerate(board[0]) if val == 0])
 
@@ -66,15 +66,17 @@ class Player():
             else:
                 self.game_succes[len(self.game_succes)-(i+1)] = True
     
-    def reset_rewards(self):
+    def reset_rewards(self) -> None:
+        """NOTE: Consider how this functions in regard to logging.
+        The challenge is that we don't necessarily want to update and log
+        at the same time. When is it okay to delete the different lists?
+        """
         del self.game_succes[:]
         del self.probs[:]
         del self.rewards[:]
         del self.saved_log_probs[:]
 
     def update_agent(self, optimizer = None) -> None:
-        #Insert code to update agent here:
-
         #Delete lists after use
         del self.rewards[:]
         del self.saved_log_probs[:]
@@ -82,29 +84,31 @@ class Player():
     def load_params(self, path: str) -> None:
         pass
 
-    def assign_reward(self, gameState: str, own_move: bool) -> None:
+    def save_params(self, path: str) -> None:
+        pass
+
+    def assign_reward(self, gameState: str, own_move: bool) -> None:        
         if own_move:
             self.rewards.append(self.rewardValues[gameState])
             self.game_succes.append(None)
         else:
             self.rewards[-1] = self.rewardValues[gameState]
 
+
+
 class DirectPolicyAgent(nn.Module, Player):
-    def __init__(self, device, gamma = 0.99):
-        super(DirectPolicyAgent, self).__init__()
+    '''
+    NOTE: This class initialises with the same keyword arguments as the Player
+    class.
+    '''
+    def __init__(self, **kwargs):
+        Player.__init__(self, **kwargs)
+        nn.Module.__init__(self)
         self.L1 = nn.Linear(42, 200)
         self.L2 = nn.Linear(200, 300)
         self.L3 = nn.Linear(300, 100)
         self.L4 = nn.Linear(100, 100)
         self.final = nn.Linear(100, 7)
-
-        self.device = device
-        self.gamma = gamma
-
-        self.saved_log_probs = []
-        self.game_succes = [] # True if win or tie, false if lose or illegal
-        self.probs = []
-        self.rewards = []
     
     def forward(self, x):
         x = self.L1(x)
@@ -126,24 +130,46 @@ class DirectPolicyAgent(nn.Module, Player):
         move = Categorical(probs.to("cpu"))
         action = move.sample()
         if legal_moves and action not in legal_moves:
-            action = torch.tensor(random.choice(legal_moves))
+            # Re-scale probabilities for the legal columns and draw one of the
+            #   legal columns
+            legal_probs = [probs[col] for col in legal_moves]
+            legal_probs = np.divide(legal_probs, sum(legal_probs))
+            action = torch.tensor(random.choices(legal_moves, legal_probs)[0])
+            # action = torch.tensor(random.choice(legal_moves)) # old approach
 
         self.saved_log_probs.append(move.log_prob(action))
         self.probs.append(probs[action])
         return action.to("cpu")
 
-    def calculate_rewards(self, env):
-        final_reward = self.rewards[-1]
-        for i, val in enumerate(reversed(self.rewards)):
-            if val != 0 and i != 0:
-                break
-            
-            weighted_reward = self.gamma**i * final_reward
-            self.rewards[len(self.rewards)-(i+1)] = weighted_reward
-            if final_reward == env.game.loss or final_reward == env.game.illegal:
-                self.game_succes[len(self.game_succes)-(i+1)] = False
-            else:
-                self.game_succes[len(self.game_succes)-(i+1)] = True
+    def update_agent(self, optimizer) -> None:
+        """NOTE: consider how and when the loss should be logged.
+
+        Args:
+            optimizer (torch.optim.Optimizer): _description_
+        """
+        loss = [-log_p * r for log_p, r in zip(self.saved_log_probs,
+                                               self.rewards)]
+
+        loss = torch.stack(loss).mean()
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        del self.rewards[:]
+        del self.saved_log_probs[:]
+        # save loss to agent for logging
+
+        # return loss.detach().numpy()
+
+    def save_agent():
+        # Figure out what is necessary to save.
+        # Do we need to save the entire agent?
+        #   (and will it then be possible to load only parameters)
+        # TODO: check up on torch docs
+        pass
+    def load_agent():
+        pass
+        
 
 class DirectPolicyAgent_large(DirectPolicyAgent):
     def __init__(self, device, gamma=0.99):
