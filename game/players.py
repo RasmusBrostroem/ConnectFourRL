@@ -21,25 +21,32 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical
+import torch.optim as optim
 import numpy as np
 import random
-
+from types import SimpleNamespace
 
 class Player():
     '''
     A player class that will act like a template for the rest of the players/agents.
     This player is a random player that just chooses a random valid column to place its piece in
     '''
-    def __init__(self, _playerPiece, _winReward, _lossReward, _tieReward, _illegalReward, _device, _gamma = 0.8) -> None:
-        self.rewardValues = {"win": _winReward,
-                            "loss": _lossReward,
-                            "tie": _tieReward,
-                            "illegal": _illegalReward,
-                            "notEnded": 0}
+    def __init__(self, player_piece: int, **kwargs) -> None:
+        self.params = {
+            "win_reward": 1,
+            "loss_reward": -1,
+            "tie_reward": 0.5,
+            "illegal_reward": -5,
+            "not_ended_reward": 0,
+            "reward_decay": 0.8,
+            "device": "cpu"
+        }
+        self.params.update(kwargs)  
 
-        self.playerPiece = _playerPiece
-        self.device = _device
-        self.gamma = _gamma
+        self.playerPiece = player_piece
+        self.device = self.params["device"]
+        self.gamma = self.params["reward_decay"]
+
         self.saved_log_probs = []
         self.game_succes = [] # True if win or tie, false if lose or illegal
         self.probs = []
@@ -61,7 +68,7 @@ class Player():
             self.rewards[len(self.rewards)-(i+1)] = weighted_reward
             
             # Assigns the game_success (false if loss or illegal, true if tie or win) for all moves played in a game
-            if final_reward == self.rewardValues["loss"] or final_reward == self.rewardValues["illegal"]:
+            if final_reward == self.params["loss_reward"] or final_reward == self.params["illegal_reward"]:
                 self.game_succes[len(self.game_succes)-(i+1)] = False
             else:
                 self.game_succes[len(self.game_succes)-(i+1)] = True
@@ -89,10 +96,10 @@ class Player():
 
     def assign_reward(self, gameState: str, own_move: bool) -> None:        
         if own_move:
-            self.rewards.append(self.rewardValues[gameState])
+            self.rewards.append(self.params[gameState])
             self.game_succes.append(None)
         else:
-            self.rewards[-1] = self.rewardValues[gameState]
+            self.rewards[-1] = self.params[gameState]
 
 
 
@@ -109,6 +116,8 @@ class DirectPolicyAgent(nn.Module, Player):
         self.L3 = nn.Linear(300, 100)
         self.L4 = nn.Linear(100, 100)
         self.final = nn.Linear(100, 7)
+
+        
     
     def forward(self, x):
         x = self.L1(x)

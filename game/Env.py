@@ -4,27 +4,27 @@ import random
 import sys
 from types import SimpleNamespace
 
-def test(b, *a, **c):
-    print(list(zip(b, a)))
-
 class Env():
-    def __init__(self, _player1, _player2, _allow_illegal_moves: bool = False, **kwargs) -> None:
+    def __init__(self, player1, player2, **kwargs) -> None:
         # Variables with defaults that are not necessary for the game or environment
         params = {"rows": 6,
                   "columns": 7,
                   "game_size": 700,
-                  "win_screen_delay": 2000}
+                  "win_screen_delay": 2000,
+                  "allow_illegal_moves": False,
+                  "display_game": True}
         params.update(kwargs) # Updating the parameters if any was given
         self.params = SimpleNamespace(**params) #Making "dot notation" possible
 
         pg.init()
         self.game = connect_four(_size = self.params.game_size, _rows = self.params.rows, _columns = self.params.columns)
-        self.allow_illegal_moves = _allow_illegal_moves
-        self.player1 = _player1
-        self.player2 = _player2
-        #currentPlayer controls whether it is player1 or player2 playing
+        self.allow_illegal_moves = self.params.allow_illegal_moves
+        self.player1 = player1
+        self.player2 = player2
+        self.display_game = self.params.display_game # This can be set by clicking on "x" or "z" on the keyboard
+
+        # CurrentPlayer controls whether it is player1 or player2 playing
         self.currentPlayer = None
-        self.display_game = True # This can be set by clicking on "x" or "z" on the keyboard
 
     def reset(self) -> None:
         '''
@@ -50,19 +50,19 @@ class Env():
         '''
         Returns the game state seen for the perspective for self.currentPlayer.
         Game state is defined as one of the following:
-        "win" - if col_choice lead to a win
-        "tie" - if col_choice lead to a tie
-        "illegal" - if col_choice is an illegal move
-        "notEnded" - if col_choice didn't lead to the game ending
+        "win_reward" - if col_choice lead to a win
+        "tie_reward" - if col_choice lead to a tie
+        "illegal_reward" - if col_choice is an illegal move
+        "not_ended_reward" - if col_choice didn't lead to the game ending
         '''
         if self.game.winning_move():
-            return "win"
+            return "win_reward"
         elif self.game.is_tie():
-            return "tie"
+            return "tie_reward"
         elif not self.game.is_legal(column=col_choice):
-            return "illegal"
+            return "illegal_reward"
         else:
-            return "notEnded"
+            return "not_ended_reward"
     
     def step(self) -> bool:
         '''
@@ -87,21 +87,21 @@ class Env():
         self.currentPlayer.assign_reward(gameState = game_state, own_move = True)
         
         # Handle the situation where the game has ended and give the opponent a reward also
-        if game_state == "win":
+        if game_state == "win_reward":
             if self.currentPlayer is self.player1:
-                self.player2.assign_reward(gameState = "loss", own_move = False)
+                self.player2.assign_reward(gameState = "loss_reward", own_move = False)
             else:
-                self.player1.assign_reward(gameState = "loss", own_move = False)
-        elif game_state == "tie":
+                self.player1.assign_reward(gameState = "loss_reward", own_move = False)
+        elif game_state == "tie_reward":
             if self.currentPlayer is self.player1:
-                self.player2.assign_reward(gameState = "tie", own_move = False)
+                self.player2.assign_reward(gameState = "tie_reward", own_move = False)
             else:
-                self.player1.assign_reward(game_state = "tie", own_move = False)
-        elif game_state == "illegal": #TODO change the reward for the opponent when the other player makes an illegal move
+                self.player1.assign_reward(game_state = "tie_reward", own_move = False)
+        elif game_state == "illegal_reward": #TODO change the reward for the opponent when the other player makes an illegal move
             if self.currentPlayer is self.player1:
-                self.player2.assign_reward(gameState = "tie", own_move = False)
+                self.player2.assign_reward(gameState = "tie_reward", own_move = False)
             else:
-                self.player1.assign_reward(gameState = "tie", own_move = False)
+                self.player1.assign_reward(gameState = "tie_reward", own_move = False)
         
         return self.game.is_done(column = col_choice)
 
