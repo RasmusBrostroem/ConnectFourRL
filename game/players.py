@@ -93,12 +93,6 @@ class Player():
     def save_params(self, path: str) -> None:
         pass
 
-    def assign_reward(self, gameState: str, own_move: bool) -> None:        
-        if own_move:
-            self.rewards.append(self.params[gameState])
-            self.game_succes.append(None)
-        else:
-            self.rewards[-1] = self.params[gameState]
 
 
 
