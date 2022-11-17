@@ -46,7 +46,7 @@ class Env():
                 self.game.close_board()
 
 
-    def game_state(self, col_choice: int) -> str:
+    def assign_rewards(self, col_choice: int) -> str:
         '''
         Returns the game state seen for the perspective for self.currentPlayer.
         Game state is defined as one of the following:
@@ -55,14 +55,30 @@ class Env():
         "illegal_reward" - if col_choice is an illegal move
         "not_ended_reward" - if col_choice didn't lead to the game ending
         '''
+        self.currentPlayer.game_succes.append(None)
         if self.game.winning_move():
-            return "win_reward"
+            self.currentPlayer.rewards.append(self.currentPlayer.params["win_reward"])
+            if self.currentPlayer is self.player1:
+                self.player2.rewards[-1] = self.player2.params["loss_reward"]
+            else:
+                self.player1.rewards[-1] = self.player1.params["loss_reward"]
+
         elif self.game.is_tie():
-            return "tie_reward"
-        elif not self.game.is_legal(column=col_choice):
-            return "illegal_reward"
+            self.currentPlayer.rewards.append(self.currentPlayer.params["tie_reward"])
+            if self.currentPlayer is self.player1:
+                self.player2.rewards[-1] = self.player2.params["tie_reward"]
+            else:
+                self.player1.rewards[-1] = self.player1.params["tie_reward"]
+
+        elif not self.game.is_legal(column=col_choice): #TODO change the reward for the opponent when the other player makes an illegal move
+            self.currentPlayer.rewards.append(self.currentPlayer.params["illegal_reward"])
+            if self.currentPlayer is self.player1:
+                self.player2.rewards[-1] = self.player2.params["tie_reward"]
+            else:
+                self.player1.rewards[-1] = self.player1.params["tie_reward"]
+
         else:
-            return "not_ended_reward"
+            self.currentPlayer.rewards.append(self.currentPlayer.params["not_ended_reward"])
     
     def step(self) -> bool:
         '''
@@ -82,26 +98,8 @@ class Env():
         # Place piece in column for current player
         self.game.place_piece(column = col_choice, piece = self.currentPlayer.playerPiece)
 
-        # Check state of game and give state to agent for him to assign reward
-        game_state = self.game_state(col_choice = col_choice)
-        self.currentPlayer.assign_reward(gameState = game_state, own_move = True)
-        
-        # Handle the situation where the game has ended and give the opponent a reward also
-        if game_state == "win_reward":
-            if self.currentPlayer is self.player1:
-                self.player2.assign_reward(gameState = "loss_reward", own_move = False)
-            else:
-                self.player1.assign_reward(gameState = "loss_reward", own_move = False)
-        elif game_state == "tie_reward":
-            if self.currentPlayer is self.player1:
-                self.player2.assign_reward(gameState = "tie_reward", own_move = False)
-            else:
-                self.player1.assign_reward(game_state = "tie_reward", own_move = False)
-        elif game_state == "illegal_reward": #TODO change the reward for the opponent when the other player makes an illegal move
-            if self.currentPlayer is self.player1:
-                self.player2.assign_reward(gameState = "tie_reward", own_move = False)
-            else:
-                self.player1.assign_reward(gameState = "tie_reward", own_move = False)
+        # Assigns rewards to the players
+        self.assign_rewards(col_choice = col_choice)
         
         return self.game.is_done(column = col_choice)
 
