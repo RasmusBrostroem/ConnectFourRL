@@ -2,7 +2,6 @@ from game.connectFour import connect_four
 import pygame as pg
 import random
 import sys
-import keyboard
 from types import SimpleNamespace
 
 def test(b, *a, **c):
