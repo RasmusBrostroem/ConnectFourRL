@@ -54,8 +54,7 @@ class Env():
 
 
     def assign_rewards(self, is_legal_move: bool) -> None:
-        """Function that assigns rewards to the players based on the players reward parameters
-        and assigns 'None' to the 'game_succes' list of the current player.
+        """Function that assigns rewards to the players based on the players reward parameters.
 
         The logic of the assignemt is:
             - If the last move by the current player was a winning move, 
@@ -75,10 +74,8 @@ class Env():
         Note:
             For this function to work, then all players must have a rewards list as an attribute,
             and they also need to have 'win_reward', 'loss_reward', 'tie_reward', 'illegal_reward' and
-            'not_ended_reward' in the params dictionary. Furthermore, the players must have a 'game_succes' list also.
+            'not_ended_reward' in the params dictionary.
         """
-        
-        self.currentPlayer.game_succes.append(None)
         if self.game.winning_move():
             self.currentPlayer.rewards.append(self.currentPlayer.params["win_reward"])
             if self.currentPlayer is self.player1:
@@ -165,6 +162,8 @@ class Env():
             if done:
                 self.player1.calculate_rewards()
                 self.player2.calculate_rewards()
+                self.player1.update_stats()
+                self.player2.update_stats()
                 if self.display_game:
                     self.render(delay=self.params.win_screen_delay)
                 break
