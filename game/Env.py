@@ -53,7 +53,7 @@ class Env():
                 self.game.close_board()
 
 
-    def assign_rewards(self, col_choice: int) -> None:
+    def assign_rewards(self, is_legal_move: bool) -> None:
         """Function that assigns rewards to the players based on the players reward parameters
         and assigns 'None' to the 'game_succes' list of the current player.
 
@@ -70,7 +70,7 @@ class Env():
             then the game is still going and we append the not ended reward (0) to the current player 
 
         Args:
-            col_choice (int): The column choosen by the currentplayer in the last 'select_action' call
+            is_legal_move (bool): Is the choosen column legal or not (true if it was legal and false if not)
 
         Note:
             For this function to work, then all players must have a rewards list as an attribute,
@@ -93,7 +93,7 @@ class Env():
             else:
                 self.player1.rewards[-1] = self.player1.params["tie_reward"]
 
-        elif not self.game.is_legal(column=col_choice): #TODO change the reward for the opponent when the other player makes an illegal move
+        elif not is_legal_move: #TODO change the reward for the opponent when the other player makes an illegal move
             self.currentPlayer.rewards.append(self.currentPlayer.params["illegal_reward"])
             if self.currentPlayer is self.player1:
                 self.player2.rewards[-1] = self.player2.params["tie_reward"]
@@ -118,13 +118,16 @@ class Env():
             legal_moves = self.game.legal_cols()
             col_choice = self.currentPlayer.select_action(board = self.game.return_board(), legal_moves = legal_moves)
 
+        # Checks if the choosen column is legal
+        is_legal = self.game.is_legal(column=col_choice)
+
         # Place piece in column for current player
         self.game.place_piece(column = col_choice, piece = self.currentPlayer.playerPiece)
 
         # Assigns rewards to the players
-        self.assign_rewards(col_choice = col_choice)
+        self.assign_rewards(is_legal_move=is_legal)
         
-        return self.game.is_done(column = col_choice)
+        return self.game.is_done(is_legal_move=is_legal)
 
     def render(self, delay = 1000):
         '''

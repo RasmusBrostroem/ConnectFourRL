@@ -143,7 +143,7 @@ class connect_four():
         '''
         self.board *= 0
     
-    def is_done(self, column: int) -> bool:
+    def is_done(self, is_legal_move: bool) -> bool:
         '''
         Checks if the game is done and returns a boolean.
         The game can end in three ways:
@@ -151,7 +151,7 @@ class connect_four():
             2. If the player makes a move that ties the players
             3. If the player makes an illegal move
         '''
-        return not self.is_legal(column=column) or self.winning_move() or self.is_tie()
+        return not is_legal_move or self.winning_move() or self.is_tie()
     
     # def evaluate(self, player: int, legal: bool):
     #     '''
