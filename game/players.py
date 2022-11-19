@@ -24,6 +24,7 @@ from torch.distributions import Categorical
 import torch.optim as optim
 import numpy as np
 import random
+import neptune.new as neptune
 
 class Player():
     '''
@@ -44,12 +45,28 @@ class Player():
 
         self.playerPiece = player_piece
         self.device = self.params["device"]
-        self.gamma = self.params["gamma"]
 
-        self.saved_log_probs = []
-        self.game_succes = [] # True if win or tie, false if lose or illegal
+        # Parameters used for logging to neptune
+        self.neptune_id = ""
+        self.stats = {
+            "wins": 0,
+            "losses": 0,
+            "ties": 0,
+            "illegals": 0,
+            "games": 0,
+            "probs_succes_sum": 0,
+            "moves_succes_total": 0,
+            "probs_failure_sum": 0,
+            "moves_failure_total": 0,
+            "loss_sum": 0
+        }
+        self.total_games = 0
         self.probs = []
+
+        # Parameters used for updating agent
+        self.saved_log_probs = []
         self.rewards = []
+        self.gamma = self.params["gamma"]
     
     def select_action(self, board: np.matrix, legal_moves: list = []) -> int:
         '''
@@ -65,22 +82,14 @@ class Player():
             
             weighted_reward = self.gamma**i * final_reward
             self.rewards[len(self.rewards)-(i+1)] = weighted_reward
-            
-            # Assigns the game_success (false if loss or illegal, true if tie or win) for all moves played in a game
-            if final_reward == self.params["loss_reward"] or final_reward == self.params["illegal_reward"]:
-                self.game_succes[len(self.game_succes)-(i+1)] = False
-            else:
-                self.game_succes[len(self.game_succes)-(i+1)] = True
     
-    def reset_rewards(self) -> None:
-        """NOTE: Consider how this functions in regard to logging.
-        The challenge is that we don't necessarily want to update and log
-        at the same time. When is it okay to delete the different lists?
-        """
-        del self.game_succes[:]
-        del self.probs[:]
-        del self.rewards[:]
-        del self.saved_log_probs[:]
+    # def reset_rewards(self) -> None:
+    #     """NOTE: Consider how this functions in regard to logging.
+    #     The challenge is that we don't necessarily want to update and log
+    #     at the same time. When is it okay to delete the different lists?
+    #     """
+    #     del self.rewards[:]
+    #     del self.saved_log_probs[:]
 
     def update_agent(self, optimizer = None) -> None:
         #Delete lists after use
@@ -93,8 +102,48 @@ class Player():
     def save_params(self, path: str) -> None:
         pass
 
+    def update_stats(self) -> None:
+        final_reward = self.rewards[-1]
 
+        self.stats["games"] += 1
+        self.total_games += 1
+        if final_reward == self.params["loss_reward"]:
+            self.stats["losses"] += 1
+        elif final_reward == self.params["win_reward"]:
+            self.stats["wins"] += 1
+        elif final_reward == self.params["tie_reward"]:
+            self.stats["ties"] += 1
+        elif final_reward == self.params["illegal_reward"]:
+            self.stats["illegals"] += 1
+        
+        if final_reward == self.params["loss_reward"] or final_reward == self.params["illegal_reward"]:
+            self.stats["probs_failure_sum"] += sum(self.probs)
+            self.stats["moves_failure_total"] += len(self.probs)
+        else:
+            self.stats["probs_succes_sum"] += sum(self.probs)
+            self.stats["moves_succes_total"] += len(self.probs)
+        
+        del self.probs[:]
+    
+    def log_params(self, neptune_run: neptune.Run) -> None:
+        self.neptune_id = neptune_run._short_id
+        neptune_run[f"player{self.playerPiece}/params"] = self.params
 
+    def log_stats(self, neptune_run: neptune.Run) -> None:
+        folder_name = f"player{self.playerPiece}/metrics"
+        neptune_run[folder_name + "/winrate"].log(self.stats["wins"]/self.stats["games"])
+        neptune_run[folder_name + "/lossrate"].log(self.stats["losses"]/self.stats["games"])
+        neptune_run[folder_name + "/tierate"].log(self.stats["ties"]/self.stats["games"])
+        neptune_run[folder_name + "/illegalrate"].log(self.stats["illegals"]/self.stats["games"])
+
+        neptune_run[folder_name + "/loss_sum"].log(self.stats["loss_sum"])
+        try:
+            neptune_run[folder_name + "/averagePropSucces"].log(self.stats["probs_succes_sum"]/self.stats["moves_succes_total"])
+            neptune_run[folder_name + "/averagePropFailure"].log(self.stats["probs_failure_sum"]/self.stats["moves_failure_total"])
+        except ZeroDivisionError:
+            pass
+
+        self.stats = dict.fromkeys(self.stats, 0) # Sets all values back to zero
 
 class DirectPolicyAgent(nn.Module, Player):
     '''
@@ -108,9 +157,7 @@ class DirectPolicyAgent(nn.Module, Player):
         self.L2 = nn.Linear(200, 300)
         self.L3 = nn.Linear(300, 100)
         self.L4 = nn.Linear(100, 100)
-        self.final = nn.Linear(100, 7)
-
-        
+        self.final = nn.Linear(100, 7)    
     
     def forward(self, x):
         x = self.L1(x)
@@ -133,14 +180,15 @@ class DirectPolicyAgent(nn.Module, Player):
         action = move.sample()
         if legal_moves and action not in legal_moves:
             # Re-scale probabilities for the legal columns and draw one of the
-            #   legal columns
-            legal_probs = [probs[col] for col in legal_moves]
-            legal_probs = np.divide(legal_probs, sum(legal_probs))
-            action = torch.tensor(random.choices(legal_moves, legal_probs)[0])
-            # action = torch.tensor(random.choice(legal_moves)) # old approach
+            # legal columns
+            # legal_probs = [probs[col].detach().numpy() for col in legal_moves]
+            # print(legal_probs)
+            # legal_probs = np.divide(legal_probs, sum(legal_probs))
+            # action = torch.tensor(random.choices(legal_moves, legal_probs)[0])
+            action = torch.tensor(random.choice(legal_moves)) # old approach
 
         self.saved_log_probs.append(move.log_prob(action))
-        self.probs.append(probs[action])
+        self.probs.append(probs[action].detach().numpy())
         return action.to("cpu")
 
     def update_agent(self, optimizer) -> None:
@@ -160,18 +208,18 @@ class DirectPolicyAgent(nn.Module, Player):
         del self.rewards[:]
         del self.saved_log_probs[:]
         # save loss to agent for logging
+        self.stats["loss_sum"] += loss.detach().numpy()
 
         # return loss.detach().numpy()
 
-    def save_agent():
+    def save_agent(self):
         # Figure out what is necessary to save.
         # Do we need to save the entire agent?
         #   (and will it then be possible to load only parameters)
         # TODO: check up on torch docs
         pass
-    def load_agent():
+    def load_agent(self):
         pass
-        
 
 class DirectPolicyAgent_large(DirectPolicyAgent):
     def __init__(self, **kwargs):
