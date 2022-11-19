@@ -329,8 +329,7 @@ class MinimaxAgent(Player):
                             best_score = score
             return best_score
 
-    @staticmethod
-    def update_board(current_state: np.matrix, choice_col: int, player_piece: int) -> np.matrix:
+    def update_board(self, current_state: np.matrix, choice_col: int, player_piece: int) -> np.matrix:
         """Places the piece on the board, such that the piece is on top in the given column.
 
         Args:
@@ -348,8 +347,7 @@ class MinimaxAgent(Player):
                 break
         return np.flip(board, 0)
 
-    @staticmethod
-    def winning_move(board: np.matrix) -> bool:
+    def winning_move(self, board: np.matrix) -> bool:
         """Checks if there is a player with four connected pieces
 
         Args:
@@ -387,8 +385,7 @@ class MinimaxAgent(Player):
         
         return False
 
-    @staticmethod
-    def is_tie(board: np.matrix) -> bool:
+    def is_tie(self, board: np.matrix) -> bool:
         """Checks if the board is filled, which results in a tie
 
         Args:
@@ -399,8 +396,7 @@ class MinimaxAgent(Player):
         """
         return all([val != 0 for val in board[0]])
 
-    @staticmethod
-    def remove_piece(board: np.matrix, column: int) -> np.matrix:
+    def remove_piece(self, board: np.matrix, column: int) -> np.matrix:
         """Removes the top piece of the board from the choosen column
 
         Args:
