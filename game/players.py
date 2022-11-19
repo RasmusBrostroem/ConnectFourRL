@@ -24,7 +24,6 @@ from torch.distributions import Categorical
 import torch.optim as optim
 import numpy as np
 import random
-from types import SimpleNamespace
 
 class Player():
     '''
@@ -38,14 +37,14 @@ class Player():
             "tie_reward": 0.5,
             "illegal_reward": -5,
             "not_ended_reward": 0,
-            "reward_decay": 0.8,
+            "gamma": 0.8,
             "device": "cpu"
         }
         self.params.update(kwargs)  
 
         self.playerPiece = player_piece
         self.device = self.params["device"]
-        self.gamma = self.params["reward_decay"]
+        self.gamma = self.params["gamma"]
 
         self.saved_log_probs = []
         self.game_succes = [] # True if win or tie, false if lose or illegal
