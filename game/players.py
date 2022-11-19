@@ -239,3 +239,179 @@ class HumanPlayer(Player):
             print(f"Illegal column. Choose between {printable_legals}.")
             chosen_col = int(input("Choose column: ")) - 1
         return chosen_col
+
+class MinimaxAgent(Player):
+    def __init__(self, max_depth=2, **kwargs):
+        Player.__init__(self, **kwargs)
+        self.max_depth = max_depth
+
+    def select_action(self, board: np.matrix, legal_moves: list = []) -> int:
+        """Selects a column that the agent is going to place their piece in
+
+        Args:
+            board (np.matrix): the current state of the board
+            legal_moves (list, optional): the columns that we can legally choose from. Defaults to [].
+
+        Returns:
+            int: the column that is choosen to place a piece in
+        """
+        best_score = -10
+        best_col = None
+        possible_ties = []
+
+        # Make sure the MinimaxAgent always have legal_moves to choose from
+        # The reason for this is that this agent can not make illegal moves
+        if not legal_moves:
+            legal_moves = [col for col, val in enumerate(board[0]) if val == 0]
+        
+        for col in legal_moves:
+            board = self.update_board(current_state=board, choice_col=col, player_piece=1)
+            score = self.minimax(board=board, depth=0, maximizing=False)
+            board = self.remove_piece(board=board, column=col)
+            if score is not None:
+                if score == self.params["not_ended_reward"] and score >= best_score:
+                    possible_ties.append(col)
+                    best_score = score
+                    best_col = col
+                elif score > best_score:
+                    best_score = score
+                    best_col = col
+
+        if best_score == self.params["not_ended_reward"]:
+            return random.choice(possible_ties)
+        return best_col
+
+    def minimax(self, board: np.matrix, depth: int, maximizing: bool) -> float:
+        """Runs the minimax algorithm on the board
+
+        Args:
+            board (np.matrix): the current state of the board
+            depth (int): the current depth of the minimax algorithm
+            maximizing (bool): true if it is the maximizing player, and false if minimizing player
+
+        Returns:
+            float: the best score optained within before reacing the 'max_depth'
+        """
+        if self.winning_move(board=board):
+            if not maximizing:
+                return self.params["win_reward"]/(depth+1)
+            else:
+                return self.params["loss_reward"]/(depth+1)
+        if self.is_tie(board=board):
+            return self.params["tie_reward"]
+        if depth > self.max_depth:
+            return self.params["not_ended_reward"]
+
+        if maximizing:
+            best_score = None
+            for col in range(board.shape[1]):
+                if board[0][col] == 0: # Checks if the column is not filled
+                    board = self.update_board(current_state=board, choice_col=col, player_piece=self.playerPiece)
+                    score = self.minimax(board=board, depth=depth+1,maximizing=False)
+                    board = self.remove_piece(board=board, column=col)
+                    if score is not None:
+                        if best_score is None:
+                            best_score = score
+                        elif score > best_score:
+                            best_score = score
+            return best_score
+        else:
+            best_score = None
+            for col in range(board.shape[1]):
+                if board[0][col] == 0: # Checks if the column is not filled
+                    board = self.update_board(current_state=board, choice_col=col, player_piece=self.playerPiece*-1)
+                    score = self.minimax(board=board, depth=depth+1, maximizing=True)
+                    board = self.remove_piece(board=board, column=col)
+                    if score is not None:
+                        if best_score is None:
+                            best_score = score
+                        elif score < best_score:
+                            best_score = score
+            return best_score
+
+    @staticmethod
+    def update_board(current_state: np.matrix, choice_col: int, player_piece: int) -> np.matrix:
+        """Places the piece on the board, such that the piece is on top in the given column.
+
+        Args:
+            current_state (np.matrix): the current state of the board
+            choice_col (int): the column that we want to place a piece in
+            player_piece (int): the piece that we want to place
+
+        Returns:
+            np.matrix: the board with the piece placed in the given column
+        """
+        board = np.flip(current_state, 0)
+        for i, row in enumerate(board):
+            if row[choice_col] == 0:
+                board[i][choice_col] = player_piece
+                break
+        return np.flip(board, 0)
+
+    @staticmethod
+    def winning_move(board: np.matrix) -> bool:
+        """Checks if there is a player with four connected pieces
+
+        Args:
+            board (np.matrix): the board that we want to check if there is a winner in
+
+        Returns:
+            bool: true if there is a player with four connected pieces, and false if not
+        """
+        rows, columns = board.shape
+        #Check horizontal locations for win
+        for c in range(columns-3):
+            for r in range(rows):
+                winning_sum = np.sum(board[r,c:c+4])
+                if winning_sum == 4 or winning_sum == -4:
+                    return True
+        
+        #Check vertical locations for win
+        for c in range(columns):
+            for r in range(rows-3):
+                winning_sum = np.sum(board[r:r+4,c]) 
+                if winning_sum == 4 or winning_sum == -4:
+                    return True
+        
+        #Check diagonals for win
+        for c in range(columns-3):
+            for r in range(rows-3):
+                sub_matrix = board[r:r+4,c:c+4]
+                #diag1 is the negative slope diag
+                diag1 = sub_matrix.trace()
+                #diag2 is the positive slope diag
+                diag2 = np.fliplr(sub_matrix).trace()
+                
+                if diag1 == 4 or diag1 == -4 or diag2 == 4 or diag2 == -4:
+                    return True
+        
+        return False
+
+    @staticmethod
+    def is_tie(board: np.matrix) -> bool:
+        """Checks if the board is filled, which results in a tie
+
+        Args:
+            board (np.matrix): the board that we want to check for a tie in
+
+        Returns:
+            bool: true if the board is filled, and false if not
+        """
+        return all([val != 0 for val in board[0]])
+
+    @staticmethod
+    def remove_piece(board: np.matrix, column: int) -> np.matrix:
+        """Removes the top piece of the board from the choosen column
+
+        Args:
+            board (np.matrix): the board that we want to remove a peice from
+            column (int): the column that the piece we want to remove is in
+
+        Returns:
+            np.matrix: the board with a piece removed from the given column
+        """
+        for i, row in enumerate(board):
+            if row[column] != 0:
+                board[i][column] = 0
+                break
+        return board
