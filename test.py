@@ -2,8 +2,11 @@ from game.players import DirectPolicyAgent, Player
 from game.Env import Env
 from torch.distributions import Categorical
 import torch
+import torch.optim as optim
 import random
 import numpy as np
+import neptune.new as neptune
+import tokens
 
 # model = DirectPolicyAgent("cpu")
 # model.train(False)
@@ -14,14 +17,24 @@ import numpy as np
 # opponent = MinimaxAgent(max_depth=0)
 
 #player1 = DirectPolicyAgent(_playerPiece = 21, _winReward = 31, _lossReward = -11, _tieReward = 0.25, _illegalReward = -5, _device = "cpu")# #_winReward = 1, _lossReward = -1, _tieReward = 0.5, _illegalReward = -5, _device = "cpu")
-player2 = Player(player_piece = -1)
+player2 = DirectPolicyAgent(player_piece = -1, win_reward = 10, loss_reward = -20)
 player1 = Player(player_piece= 1)
 
+run = neptune.init_run(project="DLProject/ConnectFour", api_token=tokens.neptune_token)
+player1.log_params(neptune_run=run)
+player2.log_params(neptune_run=run)
 
-#print(player2.params)
-environment = Env(player1, player2)
-for i in range(1):
+optimizerPL2 = optim.RMSprop(player2.parameters(), lr=0.1, weight_decay=0.95)
+
+environment = Env(player1, player2, allow_illegal_moves = False)
+for i in range(1,4001):
     environment.play_game()
+    if i % 20 == 0:
+        player2.update_agent(optimizer=optimizerPL2)
+        player1.update_agent()
+        player1.log_stats(neptune_run=run)
+        player2.log_stats(neptune_run=run)
+
 
 
 #print(torch.tensor(3) == torch.tensor([3]))
