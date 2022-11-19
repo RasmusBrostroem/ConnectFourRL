@@ -268,14 +268,13 @@ class MinimaxAgent(Player):
             board = self.place_piece(current_state=board, choice_col=col, player_piece=self.playerPiece)
             score = self.minimax(board=board, depth=0, maximizing=False)
             board = self.remove_piece(board=board, column=col)
-            if score is not None:
-                if score == self.params["not_ended_reward"] and score >= best_score:
-                    possible_ties.append(col)
-                    best_score = score
-                    best_col = col
-                elif score > best_score:
-                    best_score = score
-                    best_col = col
+            if score == self.params["not_ended_reward"] and score >= best_score:
+                possible_ties.append(col)
+                best_score = score
+                best_col = col
+            elif score > best_score:
+                best_score = score
+                best_col = col
 
         if best_score == self.params["not_ended_reward"]:
             return random.choice(possible_ties)
@@ -309,11 +308,10 @@ class MinimaxAgent(Player):
                     board = self.place_piece(current_state=board, choice_col=col, player_piece=self.playerPiece)
                     score = self.minimax(board=board, depth=depth+1,maximizing=False)
                     board = self.remove_piece(board=board, column=col)
-                    if score is not None:
-                        if best_score is None:
-                            best_score = score
-                        elif score > best_score:
-                            best_score = score
+                    if best_score is None:
+                        best_score = score
+                    elif score > best_score:
+                        best_score = score
             return best_score
         else:
             best_score = None
@@ -322,11 +320,10 @@ class MinimaxAgent(Player):
                     board = self.place_piece(current_state=board, choice_col=col, player_piece=self.playerPiece*-1)
                     score = self.minimax(board=board, depth=depth+1, maximizing=True)
                     board = self.remove_piece(board=board, column=col)
-                    if score is not None:
-                        if best_score is None:
-                            best_score = score
-                        elif score < best_score:
-                            best_score = score
+                    if best_score is None:
+                        best_score = score
+                    elif score < best_score:
+                        best_score = score
             return best_score
 
     def place_piece(self, current_state: np.matrix, choice_col: int, player_piece: int) -> np.matrix:
