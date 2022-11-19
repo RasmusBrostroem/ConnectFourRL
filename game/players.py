@@ -174,8 +174,8 @@ class DirectPolicyAgent(nn.Module, Player):
         
 
 class DirectPolicyAgent_large(DirectPolicyAgent):
-    def __init__(self, device, gamma=0.99):
-        super().__init__(device, gamma=gamma)
+    def __init__(self, **kwargs):
+        DirectPolicyAgent.__init__(self, **kwargs)
         self.L1 = nn.Linear(42, 300)
         self.L2 = nn.Linear(300, 500)
         self.L3 = nn.Linear(500, 1000)
@@ -200,8 +200,8 @@ class DirectPolicyAgent_large(DirectPolicyAgent):
         return F.softmax(x, dim=0)
 
 class DirectPolicyAgent_mini(DirectPolicyAgent):
-    def __init__(self, device, gamma=0.99):
-        super().__init__(device, gamma=gamma)
+    def __init__(self, **kwargs):
+        DirectPolicyAgent.__init__(self, **kwargs)
         self.L1 = nn.Linear(42, 300)
         self.final = nn.Linear(300, 7)
     
