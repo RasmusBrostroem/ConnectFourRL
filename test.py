@@ -1,5 +1,3 @@
-from testModel import matchup
-from minimaxAgent import MinimaxAgent
 from game.players import DirectPolicyAgent, Player
 from game.Env import Env
 from torch.distributions import Categorical
