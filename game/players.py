@@ -265,7 +265,7 @@ class MinimaxAgent(Player):
             legal_moves = [col for col, val in enumerate(board[0]) if val == 0]
         
         for col in legal_moves:
-            board = self.place_piece(current_state=board, choice_col=col, player_piece=1)
+            board = self.place_piece(current_state=board, choice_col=col, player_piece=self.playerPiece)
             score = self.minimax(board=board, depth=0, maximizing=False)
             board = self.remove_piece(board=board, column=col)
             if score is not None:
