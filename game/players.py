@@ -210,3 +210,32 @@ class DirectPolicyAgent_mini(DirectPolicyAgent):
         x = F.relu(x)
         x = self.final(x)
         return F.softmax(x, dim=0)
+
+class HumanPlayer(Player):
+    '''Let user play the game using console input.
+    NOTE: This class initialises with the same keyword arguments as the Player
+    class.
+    '''
+    def __init__(self, **kwargs):
+        Player.__init__(self, **kwargs)
+
+    def select_action(self, board: np.matrix, legal_moves: list = []) -> int:
+        """Ask for user input to choose a column.
+
+        Args:
+            board (np.matrix): The current game board
+            legal_moves (list, optional): List of legal moves. Defaults to [].
+                This argument is not used by the function, but is included
+                since every select_action method needs to have the argument.
+
+        Returns:
+            int: The column to place the piece in, 0-indexed.
+        """
+        # Calculating legal_cols since legal_moves may be an empty list
+        legal_cols = [col for col, val in enumerate(board[0]) if val == 0]
+        chosen_col = int(input("Choose column: ")) - 1
+        while chosen_col not in legal_cols:
+            printable_legals = [col+1 for col in legal_cols] # 1-indexed
+            print(f"Illegal column. Choose between {printable_legals}.")
+            chosen_col = int(input("Choose column: ")) - 1
+        return chosen_col
