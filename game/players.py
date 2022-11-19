@@ -265,7 +265,7 @@ class MinimaxAgent(Player):
             legal_moves = [col for col, val in enumerate(board[0]) if val == 0]
         
         for col in legal_moves:
-            board = self.update_board(current_state=board, choice_col=col, player_piece=1)
+            board = self.place_piece(current_state=board, choice_col=col, player_piece=1)
             score = self.minimax(board=board, depth=0, maximizing=False)
             board = self.remove_piece(board=board, column=col)
             if score is not None:
@@ -306,7 +306,7 @@ class MinimaxAgent(Player):
             best_score = None
             for col in range(board.shape[1]):
                 if board[0][col] == 0: # Checks if the column is not filled
-                    board = self.update_board(current_state=board, choice_col=col, player_piece=self.playerPiece)
+                    board = self.place_piece(current_state=board, choice_col=col, player_piece=self.playerPiece)
                     score = self.minimax(board=board, depth=depth+1,maximizing=False)
                     board = self.remove_piece(board=board, column=col)
                     if score is not None:
@@ -319,7 +319,7 @@ class MinimaxAgent(Player):
             best_score = None
             for col in range(board.shape[1]):
                 if board[0][col] == 0: # Checks if the column is not filled
-                    board = self.update_board(current_state=board, choice_col=col, player_piece=self.playerPiece*-1)
+                    board = self.place_piece(current_state=board, choice_col=col, player_piece=self.playerPiece*-1)
                     score = self.minimax(board=board, depth=depth+1, maximizing=True)
                     board = self.remove_piece(board=board, column=col)
                     if score is not None:
@@ -329,7 +329,7 @@ class MinimaxAgent(Player):
                             best_score = score
             return best_score
 
-    def update_board(self, current_state: np.matrix, choice_col: int, player_piece: int) -> np.matrix:
+    def place_piece(self, current_state: np.matrix, choice_col: int, player_piece: int) -> np.matrix:
         """Places the piece on the board, such that the piece is on top in the given column.
 
         Args:
