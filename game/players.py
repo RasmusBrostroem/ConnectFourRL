@@ -225,10 +225,43 @@ class DirectPolicyAgent(nn.Module, Player):
                   on_quit: bool = False,
                   folder: str = "learned_weights",
                   store_metadata: bool = True) -> None:
-        # NOTE: default extension is .pt if none is specified in file_name
-    
-        # Make it explicit in the docstring that it overwrites
+        """Save learnable parameters, optimizer dictionary and metadata.
 
+        Save data relevant for inference and resuming training with
+        torch.save(). Overrides Player.save_agent().
+        A dictionary is stored at "folder/file_name.pt". It contains:
+            - 'model_state_dict': The state_dict of the model, containing
+                current values of learnable parameters
+            - 'optim_state_dict': The state_dict of the optimizer.
+                (needed for further training)
+                Note: This is left out if argument on_quit is True.
+            - 'loss_sum': the current loss, ie. self.stats['loss_sum']
+                (needed for further training)
+        The model_state_dict can be loaded with self.load_network_weights().
+
+        If store_metadata is True, then also stores metadata as .json at
+        file_name_metadata.json. Included metadata is
+            - name of the agent class
+            - name of the script invoked to call this function
+            - git . 
+
+        WARNING: The function overwrites existing files without warning.
+
+        Args:
+            file_name (str): name of the file to be stored. If file extension
+                is not specified, default is ".pt". Both ".pt" and ".pth" are
+                accepted. The metadata file will append "metadata.json" to
+                the provided filename (without extension).
+            optimizer (torch.optim.Optimizer): Current optimizer object.
+            on_quit (bool, optional): Is the function called at quit-event by
+                Env.check_user_events()? Defaults to False.
+            folder (str, optional): target directory for parameters and
+                metadata. Defaults to "learned_weights".
+            store_metadata (bool, optional): Also save. Defaults to True.
+
+        Raises:
+            ValueError: When user provides a file_name with invalid extension
+        """
         name, ext = path.splitext(file_name)
         if ext == '':
             file_name += '.pt'
