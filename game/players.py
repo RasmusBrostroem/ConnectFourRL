@@ -297,7 +297,9 @@ class DirectPolicyAgent(nn.Module, Player):
             metadata = {
                 'agent_class_name': self.__class__.__name__,
                 'script_name': path.basename(__file__),
-                'current_sha': git.Repo().head.object.hexsha,
+                'current_sha': git.Repo(
+                                        search_parent_directories=True
+                                        ).head.object.hexsha,
                 'neptune_id' : self.neptune_id,
                 'optim_name': optimizer.__class__.__name__
             }
