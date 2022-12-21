@@ -3,3 +3,4 @@
 **/__pycache__/
 AgentParameters
 tokens.py
+learned_weights

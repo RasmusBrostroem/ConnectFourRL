@@ -25,6 +25,9 @@ import torch.optim as optim
 import numpy as np
 import random
 import neptune.new as neptune
+from os import path, mkdir
+import json
+import git
 
 class Player():
     '''
@@ -96,10 +99,14 @@ class Player():
         del self.rewards[:]
         del self.saved_log_probs[:]
 
-    def load_params(self, path: str) -> None:
+    def load_network_weights(self, *args, **kwargs) -> None:
+        """Empty, ensures that the method can be called for all agents 
+        """
         pass
 
-    def save_params(self, path: str) -> None:
+    def save_agent(self, *args, **kwargs) -> None:
+        """Empty, ensures that the method can be called for all agents 
+        """
         pass
 
     def update_stats(self) -> None:
@@ -212,14 +219,63 @@ class DirectPolicyAgent(nn.Module, Player):
 
         # return loss.detach().numpy()
 
-    def save_agent(self):
-        # Figure out what is necessary to save.
-        # Do we need to save the entire agent?
-        #   (and will it then be possible to load only parameters)
-        # TODO: check up on torch docs
-        pass
-    def load_agent(self):
-        pass
+    def save_agent(self,
+                  file_name: str,
+                  optimizer,
+                  on_quit: bool = False,
+                  folder: str = "learned_weights",
+                  store_metadata: bool = True) -> None:
+        # NOTE: default extension is .pt if none is specified in file_name
+    
+        # Make it explicit in the docstring that it overwrites
+
+        name, ext = path.splitext(file_name)
+        if ext == '':
+            file_name += '.pt'
+        elif ext not in ('.pt', '.pth'):
+            raise ValueError(
+                'Invalid file extension, must be .pt, .pth or not specified.'
+                )
+
+        # check if folder exists as directory
+        if not path.isdir(folder):
+            mkdir(folder)
+        
+        # save learnable parameters
+        if not folder.endswith('/'):
+            folder += '/'
+        full_path = folder + file_name
+        if not on_quit:
+            torch.save(obj={
+                'model_state_dict': self.state_dict(),
+                'optim_state_dict': optimizer.state_dict(),
+                'loss_sum': self.stats['loss_sum']
+                    },
+                    f=full_path)
+        else:
+             torch.save(obj={
+                'model_state_dict': self.state_dict(),
+                'loss_sum': self.stats['loss_sum']
+                    },
+                    f=full_path)
+            
+        if store_metadata:
+            # create dictionary of metadata
+            metadata = {
+                'agent_class_name': self.__class__.__name__,
+                'script_name': path.basename(__file__),
+                'current_sha': git.Repo().head.object.hexsha,
+                'neptune_id' : self.neptune_id,
+                'optim_name': optimizer.__class__.__name__
+            }
+            # make filename for metadata
+            meta_filename = folder + name + '_metadata' + '.json'
+            with open(meta_filename, 'w') as write_file:
+                json.dump(metadata, write_file)
+            
+
+    def load_network_weights(self, filepath: str) -> None:
+        self.load_state_dict(torch.load(filepath)['model_state_dict'])
 
 class DirectPolicyAgent_large(DirectPolicyAgent):
     def __init__(self, **kwargs):
