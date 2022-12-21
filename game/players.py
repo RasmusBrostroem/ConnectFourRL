@@ -313,6 +313,15 @@ class DirectPolicyAgent(nn.Module, Player):
             
 
     def load_network_weights(self, filepath: str) -> None:
+        """Load network weights stored with self.save_agents().
+
+        self needs to have the same (learnable) structure as the model whose
+        parameters are stored at filepath, but does not need to have anything
+        else in common with the original model.
+
+        Args:
+            filepath (str): Path to the .pt or .pth file to load from
+        """
         self.load_state_dict(torch.load(filepath)['model_state_dict'])
 
 class DirectPolicyAgent_large(DirectPolicyAgent):
