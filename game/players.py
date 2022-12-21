@@ -273,7 +273,7 @@ class DirectPolicyAgent(nn.Module, Player):
                 'Invalid file extension, must be .pt, .pth or not specified.'
                 )
 
-        # check if folder exists as directory
+        # ensure that folder exists prior to saving (torch needs this)
         if not path.isdir(folder):
             mkdir(folder)
         
@@ -296,7 +296,6 @@ class DirectPolicyAgent(nn.Module, Player):
                     f=full_path)
             
         if store_metadata:
-            # create dictionary of metadata
             metadata = {
                 'agent_class_name': self.__class__.__name__,
                 'script_name': path.basename(__file__),
@@ -306,7 +305,6 @@ class DirectPolicyAgent(nn.Module, Player):
                 'neptune_id' : self.neptune_id,
                 'optim_name': optimizer.__class__.__name__
             }
-            # make filename for metadata
             meta_filename = folder + name + '_metadata' + '.json'
             with open(meta_filename, 'w') as write_file:
                 json.dump(metadata, write_file)
