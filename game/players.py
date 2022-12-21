@@ -231,11 +231,11 @@ class DirectPolicyAgent(nn.Module, Player):
         torch.save(). Overrides Player.save_agent().
         A dictionary is stored at "folder/file_name.pt". It contains:
             - 'model_state_dict': The state_dict of the model, containing
-                current values of learnable parameters
+                current values of learnable parameters.
             - 'optim_state_dict': The state_dict of the optimizer.
                 (needed for further training)
                 Note: This is left out if argument on_quit is True.
-            - 'loss_sum': the current loss, ie. self.stats['loss_sum']
+            - 'loss_sum': the current loss, ie. self.stats['loss_sum'].
                 (needed for further training)
         The model_state_dict can be loaded with self.load_network_weights().
 
@@ -243,7 +243,10 @@ class DirectPolicyAgent(nn.Module, Player):
         file_name_metadata.json. Included metadata is
             - name of the agent class
             - name of the script invoked to call this function
-            - git . 
+            - current hash of the git repository the script resides in
+            - id of the neptune run used for logging, empty string if not used
+            - name of the optimizer class used, "NoneType" if data is stored
+                upon quitting the environment.
 
         WARNING: The function overwrites existing files without warning.
 
