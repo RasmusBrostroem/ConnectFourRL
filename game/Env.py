@@ -36,14 +36,27 @@ class Env():
         """Function that checks user events
 
         The following events are handled:
-            - If the user clicks escape, or quit, then closes pygame and script
+            - If the user clicks escape, or quit, then saves agents, closes pygame and script
             - If the user clicks "x", then sets 'display_game' to true, and the game will be shown
             - If the user clicks "z", then sets 'display_game' to false, and game will not be shown
+
+        Notes for quitting: Learnable parameters are saved using the agents'
+        own procedures for this. The filename indicates that the game was
+        quit, such that users proceed with caution when loading the objects.
+        Optimizer state dicitonaries are not saved.
+        Metadata is saved.
         """
         pg.init() # if we call pg.display.quit in self.game.close_board() then we also close pygame, so we cant use pg.event.get() after. Therefore, we have to init pg every time
         for event in pg.event.get():
             if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
-                #TODO: save players before quitting
+                self.player1.save_agent(file_name="on_quit_player1",
+                                        optimizer=None,
+                                        on_quit=True
+                                        )
+                self.player2.save_agent(file_name="on_quit_player2",
+                                        optimizer=None,
+                                        on_quit=True
+                                        )
                 pg.quit()
                 sys.exit()
             if event.type == pg.KEYDOWN and event.key == pg.K_x:
