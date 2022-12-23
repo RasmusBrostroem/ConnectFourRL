@@ -259,7 +259,8 @@ class DirectPolicyAgent(nn.Module, Player):
             on_quit (bool, optional): Is the function called at quit-event by
                 Env.check_user_events()? Defaults to False.
             folder (str, optional): target directory for parameters and
-                metadata. Defaults to "learned_weights".
+                metadata, can be "" to store in the same folder as the script
+                calling the function. Defaults to "learned_weights".
             store_metadata (bool, optional): Also save. Defaults to True.
 
         Raises:
@@ -274,7 +275,7 @@ class DirectPolicyAgent(nn.Module, Player):
                 )
 
         # ensure that folder exists prior to saving (torch needs this)
-        if not path.isdir(folder):
+        if not path.isdir(folder) and folder != '':
             mkdir(folder)
         
         # save learnable parameters
@@ -311,7 +312,7 @@ class DirectPolicyAgent(nn.Module, Player):
             
 
     def load_network_weights(self, filepath: str) -> None:
-        """Load network weights stored with self.save_agents().
+        """Load network weights (stored with self.save_agents()) to the agent.
 
         self needs to have the same (learnable) structure as the model whose
         parameters are stored at filepath, but does not need to have anything
