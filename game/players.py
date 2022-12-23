@@ -279,7 +279,7 @@ class DirectPolicyAgent(nn.Module, Player):
             mkdir(folder)
         
         # save learnable parameters
-        if not folder.endswith('/'):
+        if not folder.endswith('/') and folder != '':
             folder += '/'
         full_path = folder + file_name
         if not on_quit:
