@@ -41,8 +41,9 @@ class Env():
             - If the user clicks "z", then sets 'display_game' to false, and game will not be shown
 
         Notes for quitting: Learnable parameters are saved using the agents'
-        own procedures for this. The filename indicates that the game was
-        quit, such that users proceed with caution when loading the objects.
+        own methods for this, using default arguments besides the filename.
+        The filename indicates that the game was quit, such that users proceed
+        with caution when loading the objects.
         Optimizer state dicitonaries are not saved.
         Metadata is saved.
         """
@@ -50,12 +51,10 @@ class Env():
         for event in pg.event.get():
             if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
                 self.player1.save_agent(file_name="on_quit_player1",
-                                        optimizer=None,
-                                        on_quit=True
+                                        optimizer=None
                                         )
                 self.player2.save_agent(file_name="on_quit_player2",
-                                        optimizer=None,
-                                        on_quit=True
+                                        optimizer=None
                                         )
                 pg.quit()
                 sys.exit()
