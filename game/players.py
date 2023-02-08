@@ -221,8 +221,7 @@ class DirectPolicyAgent(nn.Module, Player):
 
     def save_agent(self,
                   file_name: str,
-                  optimizer,
-                  on_quit: bool = False,
+                  optimizer=None,
                   folder: str = "learned_weights",
                   store_metadata: bool = True) -> None:
         """Save learnable parameters, optimizer dictionary and metadata.
@@ -231,12 +230,12 @@ class DirectPolicyAgent(nn.Module, Player):
         torch.save(). Overrides Player.save_agent().
         A dictionary is stored at "folder/file_name.pt". It contains:
             - 'model_state_dict': The state_dict of the model, containing
-                current values of learnable parameters.
+                current values of learnable parameters,
             - 'optim_state_dict': The state_dict of the optimizer.
-                (needed for further training)
-                Note: This is left out if argument on_quit is True.
+                (might be needed for further training)
+                Note: This is left out if optimizer=None,
             - 'loss_sum': the current loss, ie. self.stats['loss_sum'].
-                (needed for further training)
+                (needed for further training).
         The model_state_dict can be loaded with self.load_network_weights().
 
         If store_metadata is True, then also stores metadata as .json at
@@ -255,13 +254,13 @@ class DirectPolicyAgent(nn.Module, Player):
                 is not specified, default is ".pt". Both ".pt" and ".pth" are
                 accepted. The metadata file will append "metadata.json" to
                 the provided filename (without extension).
-            optimizer (torch.optim.Optimizer): Current optimizer object.
-            on_quit (bool, optional): Is the function called at quit-event by
-                Env.check_user_events()? Defaults to False.
+            optimizer (torch.optim.Optimizer): Current optimizer object. If
+                None, the optimizer will not be stored. Defaults to None. 
             folder (str, optional): target directory for parameters and
                 metadata, can be "" to store in the same folder as the script
                 calling the function. Defaults to "learned_weights".
-            store_metadata (bool, optional): Also save. Defaults to True.
+            store_metadata (bool, optional): Should metadata be saved?
+                Defaults to True.
 
         Raises:
             ValueError: When user provides a file_name with invalid extension
@@ -282,7 +281,7 @@ class DirectPolicyAgent(nn.Module, Player):
         if not folder.endswith('/') and folder != '':
             folder += '/'
         full_path = folder + file_name
-        if not on_quit:
+        if optimizer:
             torch.save(obj={
                 'model_state_dict': self.state_dict(),
                 'optim_state_dict': optimizer.state_dict(),
