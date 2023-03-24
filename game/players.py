@@ -1,33 +1,55 @@
-#Links for implementing agents
-'''
-Tic-tac-toe with policy gradient desent
-https://medium.com/@carsten.friedrich/part-8-tic-tac-toe-with-policy-gradient-descent-da2496defc45
-https://spinningup.openai.com/en/latest/spinningup/rl_intro3.html
-http://rail.eecs.berkeley.edu/deeprlcourse-fa17/f17docs/lecture_4_policy_gradient.pdf
-'''
+"""This module provides classes for interacting with the game.
 
-'''
-Reward function is built based on these point systems:
-- Winning move: 1
-- losing action: -1
-- draw action: 0
-- illegal move: -10
-- non ending action: l^t * Final_Reward
-    Where l is a constant between 0 and 1, t is the number of moved the action happened
-    before the end and Final_reward being one the the four rewards above
-'''
+Defines the following classes:
+    - Player(): Acts as a template which the other classes extends. All
+        player classes need to extend this class in order to have the methods
+        required by the other scripts.
+        Places pieces randomly when playing.
+    - DirectPolicyAgent(): Extends Player() with a neural network deciding
+        which pieces to place. Also includes functionality for loading/
+        updating/saving the network.
+    - DirectPolicyAgent_large(): Same as the prior, with a larger network.
+    - DirectPolicyAgent_small(): Same as the prior, with a smaller network.
+    - DirectPolicyAgent_mini(): Same as the prior, with a very small network.
+    - HumanPlayer(): Allows the user to play the game through console input.
+    - MinimaxAgent(): Implements the minimax algorithm for Connect Four.
+        Uses this to decide where to place pieces.
+
+This module requires the following dependencies:
+    - torch: A PyTorch deep learning framework used for building and training
+        neural networks.
+    - numpy: A library for working with arrays and matrices of numerical data.
+    - random: A module for generating random numbers and making random
+        selections from lists.
+    - neptune.new: A Python library for experiment tracking and logging.
+    - os: A module for working with the operating system, including file and
+        directory operations.
+    - json: A module for encoding and decoding JSON data.
+    - git: A module for working with Git repositories and version control.
+
+    The following sub-modules from the torch package are also required:
+    - nn: A sub-module of torch for building neural network layers and
+        models.
+    - nn.functional: A sub-module of torch.nn that provides activation
+        functions and other utilities.
+    - distributions.Categorical: A sub-module of torch.distributions for
+        working with categorical distributions.
+
+    Note: See our README.md for versions of dependencies and Python to ensure
+        compatibility and optimal performance.
+"""
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical
-import torch.optim as optim
 import numpy as np
 import random
 import neptune
 from os import path, mkdir
 import json
 import git
+
 
 class Player():
     '''
@@ -44,7 +66,7 @@ class Player():
             "gamma": 0.8,
             "device": "cpu"
         }
-        self.params.update(kwargs)  
+        self.params.update(kwargs)
 
         self.playerPiece = player_piece
         self.device = self.params["device"]
@@ -70,7 +92,8 @@ class Player():
         self.saved_log_probs = []
         self.rewards = []
         self.gamma = self.params["gamma"]
-    
+
+
     def select_action(self, board: np.matrix, legal_moves: list = []) -> int:
         '''
         Return a random valid column from the board to place the piece in
@@ -82,10 +105,10 @@ class Player():
         for i, val in enumerate(reversed(self.rewards)):
             if val != 0 and i != 0:
                 break
-            
+
             weighted_reward = self.gamma**i * final_reward
             self.rewards[len(self.rewards)-(i+1)] = weighted_reward
-    
+
     # def reset_rewards(self) -> None:
     #     """NOTE: Consider how this functions in regard to logging.
     #     The challenge is that we don't necessarily want to update and log
@@ -95,17 +118,17 @@ class Player():
     #     del self.saved_log_probs[:]
 
     def update_agent(self, optimizer = None) -> None:
-        #Delete lists after use
+        # Delete lists after use
         del self.rewards[:]
         del self.saved_log_probs[:]
 
     def load_network_weights(self, *args, **kwargs) -> None:
-        """Empty, ensures that the method can be called for all agents 
+        """Empty, ensures that the method can be called for all agents
         """
         pass
 
     def save_agent(self, *args, **kwargs) -> None:
-        """Empty, ensures that the method can be called for all agents 
+        """Empty, ensures that the method can be called for all agents
         """
         pass
 
@@ -122,16 +145,16 @@ class Player():
             self.stats["ties"] += 1
         elif final_reward == self.params["illegal_reward"]:
             self.stats["illegals"] += 1
-        
+
         if final_reward == self.params["loss_reward"] or final_reward == self.params["illegal_reward"]:
             self.stats["probs_failure_sum"] += sum(self.probs)
             self.stats["moves_failure_total"] += len(self.probs)
         else:
             self.stats["probs_succes_sum"] += sum(self.probs)
             self.stats["moves_succes_total"] += len(self.probs)
-        
+
         del self.probs[:]
-    
+
     def log_params(self, neptune_run: neptune.Run) -> None:
         self.neptune_id = neptune_run["sys/id"].fetch()
         neptune_run[f"player{self.playerPiece}/params"] = self.params
@@ -150,7 +173,8 @@ class Player():
         except ZeroDivisionError:
             pass
 
-        self.stats = dict.fromkeys(self.stats, 0) # Sets all values back to zero
+        self.stats = dict.fromkeys(self.stats, 0)  # Sets all values back to zero
+
 
 class DirectPolicyAgent(nn.Module, Player):
     '''
@@ -164,8 +188,8 @@ class DirectPolicyAgent(nn.Module, Player):
         self.L2 = nn.Linear(200, 300)
         self.L3 = nn.Linear(300, 100)
         self.L4 = nn.Linear(100, 100)
-        self.final = nn.Linear(100, 7)    
-    
+        self.final = nn.Linear(100, 7)
+
     def forward(self, x):
         x = self.L1(x)
         x = F.relu(x)
@@ -255,7 +279,7 @@ class DirectPolicyAgent(nn.Module, Player):
                 accepted. The metadata file will append "metadata.json" to
                 the provided filename (without extension).
             optimizer (torch.optim.Optimizer): Current optimizer object. If
-                None, the optimizer will not be stored. Defaults to None. 
+                None, the optimizer will not be stored. Defaults to None.
             folder (str, optional): target directory for parameters and
                 metadata, can be "" to store in the same folder as the script
                 calling the function. Defaults to "learned_weights".
@@ -276,7 +300,7 @@ class DirectPolicyAgent(nn.Module, Player):
         # ensure that folder exists prior to saving (torch needs this)
         if not path.isdir(folder) and folder != '':
             mkdir(folder)
-        
+
         # save learnable parameters
         if not folder.endswith('/') and folder != '':
             folder += '/'
@@ -294,7 +318,7 @@ class DirectPolicyAgent(nn.Module, Player):
                 'loss_sum': self.stats['loss_sum']
                     },
                     f=full_path)
-            
+
         if store_metadata:
             metadata = {
                 'agent_class_name': self.__class__.__name__,
@@ -308,7 +332,6 @@ class DirectPolicyAgent(nn.Module, Player):
             meta_filename = folder + name + '_metadata' + '.json'
             with open(meta_filename, 'w') as write_file:
                 json.dump(metadata, write_file)
-            
 
     def load_network_weights(self, filepath: str) -> None:
         """Load network weights (stored with self.save_agents()) to the agent.
@@ -322,6 +345,7 @@ class DirectPolicyAgent(nn.Module, Player):
         """
         self.load_state_dict(torch.load(filepath)['model_state_dict'])
 
+
 class DirectPolicyAgent_large(DirectPolicyAgent):
     def __init__(self, **kwargs):
         DirectPolicyAgent.__init__(self, **kwargs)
@@ -331,7 +355,7 @@ class DirectPolicyAgent_large(DirectPolicyAgent):
         self.L4 = nn.Linear(1000, 600)
         self.L5 = nn.Linear(600, 200)
         self.L6 = nn.Linear(200, 100)
-    
+
     def forward(self, x):
         x = self.L1(x)
         x = F.relu(x)
@@ -348,17 +372,19 @@ class DirectPolicyAgent_large(DirectPolicyAgent):
         x = self.final(x)
         return F.softmax(x, dim=0)
 
+
 class DirectPolicyAgent_mini(DirectPolicyAgent):
     def __init__(self, **kwargs):
         DirectPolicyAgent.__init__(self, **kwargs)
         self.L1 = nn.Linear(42, 300)
         self.final = nn.Linear(300, 7)
-    
+
     def forward(self, x):
         x = self.L1(x)
         x = F.relu(x)
         x = self.final(x)
         return F.softmax(x, dim=0)
+
 
 class HumanPlayer(Player):
     '''Let user play the game using console input.
@@ -389,6 +415,7 @@ class HumanPlayer(Player):
             chosen_col = int(input("Choose column: ")) - 1
         return chosen_col
 
+
 class MinimaxAgent(Player):
     def __init__(self, max_depth=2, **kwargs):
         Player.__init__(self, **kwargs)
@@ -412,7 +439,7 @@ class MinimaxAgent(Player):
         # The reason for this is that this agent can not make illegal moves
         if not legal_moves:
             legal_moves = [col for col, val in enumerate(board[0]) if val == 0]
-        
+
         for col in legal_moves:
             board = self.place_piece(current_state=board, choice_col=col, player_piece=self.playerPiece)
             score = self.minimax(board=board, depth=0, maximizing=False)
@@ -503,32 +530,32 @@ class MinimaxAgent(Player):
             bool: true if there is a player with four connected pieces, and false if not
         """
         rows, columns = board.shape
-        #Check horizontal locations for win
+        # Check horizontal locations for win
         for c in range(columns-3):
             for r in range(rows):
                 winning_sum = np.sum(board[r,c:c+4])
                 if winning_sum == 4 or winning_sum == -4:
                     return True
-        
-        #Check vertical locations for win
+
+        # Check vertical locations for win
         for c in range(columns):
             for r in range(rows-3):
                 winning_sum = np.sum(board[r:r+4,c]) 
                 if winning_sum == 4 or winning_sum == -4:
                     return True
-        
-        #Check diagonals for win
+
+        # Check diagonals for win
         for c in range(columns-3):
             for r in range(rows-3):
-                sub_matrix = board[r:r+4,c:c+4]
-                #diag1 is the negative slope diag
+                sub_matrix = board[r:r+4, c:c+4]
+                # diag1 is the negative slope diag
                 diag1 = sub_matrix.trace()
-                #diag2 is the positive slope diag
+                # diag2 is the positive slope diag
                 diag2 = np.fliplr(sub_matrix).trace()
-                
+
                 if diag1 == 4 or diag1 == -4 or diag2 == 4 or diag2 == -4:
                     return True
-        
+
         return False
 
     def is_tie(self, board: np.matrix) -> bool:
