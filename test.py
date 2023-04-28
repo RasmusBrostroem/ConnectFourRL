@@ -5,8 +5,7 @@ import torch
 import torch.optim as optim
 import random
 import numpy as np
-import neptune.new as neptune
-import tokens
+import neptune
 
 # model = DirectPolicyAgent("cpu")
 # model.train(False)
@@ -20,7 +19,7 @@ import tokens
 player2 = DirectPolicyAgent(player_piece = -1, win_reward = 10, loss_reward = -20)
 player1 = Player(player_piece= 1)
 
-run = neptune.init_run(project="DLProject/ConnectFour", api_token=tokens.neptune_token)
+run = neptune.init_run(project="DLProject/ConnectFour")
 player1.log_params(neptune_run=run)
 player2.log_params(neptune_run=run)
 

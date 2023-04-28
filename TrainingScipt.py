@@ -1,8 +1,7 @@
 import os
 import pandas as pd
-import gym
 import game
-import neptune.new as neptune
+import neptune
 import pygame as pg
 import torch
 import torch.optim as optim
