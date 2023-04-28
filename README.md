@@ -14,3 +14,7 @@ back in a a month or so!_
 _Write a minimal example of how to play the game against a neural network_
 
 ## Requirements
+This project was built using Python version 3.9.13.
+The used packages are listed in `requirements.txt`, which can be used to
+create a virtual environment as described
+[here](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/).  
