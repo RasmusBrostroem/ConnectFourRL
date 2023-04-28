@@ -24,7 +24,7 @@ from torch.distributions import Categorical
 import torch.optim as optim
 import numpy as np
 import random
-import neptune.new as neptune
+import neptune
 from os import path, mkdir
 import json
 import git
@@ -133,7 +133,7 @@ class Player():
         del self.probs[:]
     
     def log_params(self, neptune_run: neptune.Run) -> None:
-        self.neptune_id = neptune_run._short_id
+        self.neptune_id = neptune_run["sys/id"].fetch()
         neptune_run[f"player{self.playerPiece}/params"] = self.params
 
     def log_stats(self, neptune_run: neptune.Run) -> None:
