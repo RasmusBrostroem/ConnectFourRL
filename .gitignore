@@ -2,5 +2,5 @@
 .idea
 **/__pycache__/
 AgentParameters
-tokens.py
 learned_weights
+env
