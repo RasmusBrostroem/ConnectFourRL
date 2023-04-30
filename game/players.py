@@ -93,12 +93,13 @@ class Player():
         self.rewards = []
         self.gamma = self.params["gamma"]
 
-
     def select_action(self, board: np.matrix, legal_moves: list = []) -> int:
         '''
         Return a random valid column from the board to place the piece in
         '''
-        return random.choice([col for col, val in enumerate(board[0]) if val == 0])
+        return random.choice(
+            [col for col, val in enumerate(board[0]) if val == 0]
+            )
 
     def calculate_rewards(self) -> None:
         final_reward = self.rewards[-1]
@@ -109,15 +110,7 @@ class Player():
             weighted_reward = self.gamma**i * final_reward
             self.rewards[len(self.rewards)-(i+1)] = weighted_reward
 
-    # def reset_rewards(self) -> None:
-    #     """NOTE: Consider how this functions in regard to logging.
-    #     The challenge is that we don't necessarily want to update and log
-    #     at the same time. When is it okay to delete the different lists?
-    #     """
-    #     del self.rewards[:]
-    #     del self.saved_log_probs[:]
-
-    def update_agent(self, optimizer = None) -> None:
+    def update_agent(self, optimizer=None) -> None:
         # Delete lists after use
         del self.rewards[:]
         del self.saved_log_probs[:]
@@ -146,7 +139,8 @@ class Player():
         elif final_reward == self.params["illegal_reward"]:
             self.stats["illegals"] += 1
 
-        if final_reward == self.params["loss_reward"] or final_reward == self.params["illegal_reward"]:
+        if final_reward == self.params["loss_reward"] or \
+                final_reward == self.params["illegal_reward"]:
             self.stats["probs_failure_sum"] += sum(self.probs)
             self.stats["moves_failure_total"] += len(self.probs)
         else:
@@ -161,19 +155,27 @@ class Player():
 
     def log_stats(self, neptune_run: neptune.Run) -> None:
         folder_name = f"player{self.playerPiece}/metrics"
-        neptune_run[folder_name + "/winrate"].log(self.stats["wins"]/self.stats["games"])
-        neptune_run[folder_name + "/lossrate"].log(self.stats["losses"]/self.stats["games"])
-        neptune_run[folder_name + "/tierate"].log(self.stats["ties"]/self.stats["games"])
-        neptune_run[folder_name + "/illegalrate"].log(self.stats["illegals"]/self.stats["games"])
+        neptune_run[folder_name + "/winrate"].log(
+            self.stats["wins"]/self.stats["games"])
+        neptune_run[folder_name + "/lossrate"].log(
+            self.stats["losses"]/self.stats["games"])
+        neptune_run[folder_name + "/tierate"].log(
+            self.stats["ties"]/self.stats["games"])
+        neptune_run[folder_name + "/illegalrate"].log(
+            self.stats["illegals"]/self.stats["games"])
 
         neptune_run[folder_name + "/loss_sum"].log(self.stats["loss_sum"])
         try:
-            neptune_run[folder_name + "/averagePropSucces"].log(self.stats["probs_succes_sum"]/self.stats["moves_succes_total"])
-            neptune_run[folder_name + "/averagePropFailure"].log(self.stats["probs_failure_sum"]/self.stats["moves_failure_total"])
+            neptune_run[folder_name + "/averagePropSucces"].log(
+                self.stats["probs_succes_sum"] /
+                self.stats["moves_succes_total"])
+            neptune_run[folder_name + "/averagePropFailure"].log(
+                self.stats["probs_failure_sum"] /
+                self.stats["moves_failure_total"])
         except ZeroDivisionError:
             pass
 
-        self.stats = dict.fromkeys(self.stats, 0)  # Sets all values back to zero
+        self.stats = dict.fromkeys(self.stats, 0)  # Sets all values back to 0
 
 
 class DirectPolicyAgent(nn.Module, Player):
