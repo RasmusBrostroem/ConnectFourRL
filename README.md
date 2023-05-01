@@ -7,8 +7,6 @@ some templates/examples of how you can extend it and implement
 your own agents and training strategies. If you're interested, please come
 back in a a month or so!_
 
-# Proposed sections for this readme
-
 ## Training an agent
 The script "training_script.py" serves as a basic template for learning an
 agent to play the game.  
@@ -17,6 +15,14 @@ player classes against each other. Ie., you can also use the function both for
 training one agent against an opponent using the Minimax-strategy.  
 The script should give an idea of how to write training scripts using our
 environment.
+
+## Logging with Neptune
+We use Neptune to track the training progress of agents. To use our logging
+functions, you therefore need a Neptune user and write access to a project.
+You also need to have your personal API token set as a system variable on your
+PATH.    
+See the [Neptune docs](https://docs.neptune.ai/setup/setting_api_token/) for
+instructions.
 
 ## Requirements
 This project was built using Python version 3.9.13.
