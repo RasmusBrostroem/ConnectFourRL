@@ -9,9 +9,14 @@ back in a a month or so!_
 
 # Proposed sections for this readme
 
-## Minimal example
-
-_Write a minimal example of how to play the game against a neural network_
+## Training an agent
+The script "training_script.py" serves as a basic template for learning an
+agent to play the game.  
+The script defines the function `train()`, which can train any two implemented
+player classes against each other. Ie., you can also use the function both for
+training one agent against an opponent using the Minimax-strategy.  
+The script should give an idea of how to write training scripts using our
+environment.
 
 ## Requirements
 This project was built using Python version 3.9.13.
