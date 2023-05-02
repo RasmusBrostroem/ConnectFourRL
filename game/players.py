@@ -1,4 +1,4 @@
-"""This module provides classes for interacting with the game.
+"""This module provides agent classes for playing and learning the game.
 
 Defines the following classes:
     - Player(): Acts as a template which the other classes extends. All
@@ -15,28 +15,9 @@ Defines the following classes:
     - MinimaxAgent(): Implements the minimax algorithm for Connect Four.
         Uses this to decide where to place pieces.
 
-This module requires the following dependencies:
-    - torch: A PyTorch deep learning framework used for building and training
-        neural networks.
-    - numpy: A library for working with arrays and matrices of numerical data.
-    - random: A module for generating random numbers and making random
-        selections from lists.
-    - neptune.new: A Python library for experiment tracking and logging.
-    - os: A module for working with the operating system, including file and
-        directory operations.
-    - json: A module for encoding and decoding JSON data.
-    - git: A module for working with Git repositories and version control.
-
-    The following sub-modules from the torch package are also required:
-    - nn: A sub-module of torch for building neural network layers and
-        models.
-    - nn.functional: A sub-module of torch.nn that provides activation
-        functions and other utilities.
-    - distributions.Categorical: A sub-module of torch.distributions for
-        working with categorical distributions.
-
-    Note: See our README.md for versions of dependencies and Python to ensure
-        compatibility and optimal performance.
+This module has several dependencies. We recommend creating a virtual
+environment from our requirements.txt file to ensure compatibility and optimal
+performance. Please refer to the README.md for instructions.
 """
 
 import torch
