@@ -33,11 +33,80 @@ import git
 
 
 class Player():
-    '''
-    A player class that will act like a template for the rest of the players/agents.
-    This player is a random player that just chooses a random valid column to place its piece in
-    '''
+    """Represents a player in Connect Four playing randomly. Template class.
+
+    The class provides methods for selecting a column to place a piece in,
+    updating statistics and rewards for the player, and logging performance
+    metrics to Neptune.
+    The class acts as a template class and contains all the methods and
+    attributes a player class should provide to correctly interact with our
+    implementation of Connect Four. Our implemented environment assumes that
+    players provide the attributes and methods contained in this template.
+
+    Attributes:
+        Player configuration (these can be specified at initialisation):
+            params: Parameters relevant for training. See __init__ docstring.
+            playerPiece: Value of the player's piece in matrix representation.
+            device: The device on which to perform computations (eg "cuda").
+
+        Logging:
+            neptune_id: Neptune id of the current training run.
+            stats: Dict of performance metrics for the current training run.
+            total_games: Total number of games played by the agent (across
+                all training runs).
+            probs: List of probability for each chosen move.
+
+        Updating/learning:
+            saved_log_probs: List of log(probability) for each chosen move.
+            rewards: List of rewards received for each move in the episode.
+            gamma: Discount factor used for calculating rewards.
+
+    Methods:
+        select_action(board, legal_moves=[]): Decide (randomly) where to place
+            the next piece.
+        calculate_rewards(): Calculates discounted rewards at end of episode.
+        update_agent(optimizer=None): Placeholder for updating network
+            weights.
+        load_network_weights(*args, **kwargs): Placeholder method that can be
+            overridden to load the a trained agent.
+        save_agent(*args, **kwargs): Placeholder method that can be overridden
+            to save a trained agent.
+        update_stats(): Update performance metrics based on the outcome of an
+            episode.
+        log_params(neptune_run): Log player parameters to Neptune experiment.
+        log_stats(neptune_run): Log performance metrics to a Neptune
+            experiment.
+
+
+    When extending the class, it will usually be sufficient to overwrite the
+    following methods:
+        - select_action,
+        - update_agent,
+        - load_network_weights and save_agent.
+    """
+
     def __init__(self, player_piece: int, **kwargs) -> None:
+        """Initialise a new Player object.
+
+        Args:
+            player_piece (int): The value of the player's piece (1 or -1).
+
+        Keyword arguments:
+            win_reward (float, default=1): The reward value received when
+                winning a game.
+            loss_reward (float, default=-1): The reward value received when
+                losing a game.
+            tie_reward (float, default=0.5): The reward value received when
+                tying a game.
+            illegal_reward (float, default=-5): The reward value received when
+                attempting an illegal move (if doing so is allowed).
+            not_ended_reward (float, default=0): The reward value received
+                at each step when game has not ended.
+            gamma (float, default=0.8): The discount factor used when
+                calculating rewards.
+            device (str, default="cpu"): The device on which to perform
+                computations, e.g. "cpu" or "cuda".
+        """
         self.params = {
             "win_reward": 1,
             "loss_reward": -1,
@@ -60,8 +129,8 @@ class Player():
             "ties": 0,
             "illegals": 0,
             "games": 0,
-            "probs_succes_sum": 0,
-            "moves_succes_total": 0,
+            "probs_success_sum": 0,
+            "moves_success_total": 0,
             "probs_failure_sum": 0,
             "moves_failure_total": 0,
             "loss_sum": 0
@@ -75,14 +144,30 @@ class Player():
         self.gamma = self.params["gamma"]
 
     def select_action(self, board: np.matrix, legal_moves: list = []) -> int:
-        '''
-        Return a random valid column from the board to place the piece in
-        '''
+        """Choose a random valid column to place the next piece in.
+
+        Args:
+            board (np.matrix): Current game state in matrix representation.
+            legal_moves (list, optional): List of legal columns. Only provided
+                for extendability, as this method does not actually need the
+                argument but subclasses might. Defaults to [].
+
+        Returns:
+            int: Index of the chosen column (0-indexed).
+
+        This method should be overridden by subclasses.
+        """
         return random.choice(
             [col for col, val in enumerate(board[0]) if val == 0]
             )
 
     def calculate_rewards(self) -> None:
+        """Calculate the discounted rewards for each move the player made.
+
+        This method should be called at the end of an episode.
+
+        Returns: None.
+        """
         final_reward = self.rewards[-1]
         for i, val in enumerate(reversed(self.rewards)):
             if val != 0 and i != 0:
@@ -92,21 +177,44 @@ class Player():
             self.rewards[len(self.rewards)-(i+1)] = weighted_reward
 
     def update_agent(self, optimizer=None) -> None:
-        # Delete lists after use
+        """Placeholder method for updating agent parameters and resetting.
+
+        Args:
+            optimizer (optional): An optimizer object used to update neural
+                network weights. Only relevant for certain subclasses.
+                Defaults to None.
+
+        Returns: None.
+
+        Note: When overwriting this method, you need to delete the elements of
+        self.rewards and self.saved_log_probs for the purposes of reward
+        calculation and logging. Failing to do so will lead to problems,
+        unless you also change the other methods.
+        """
+        # Important: delete lists after update call
         del self.rewards[:]
         del self.saved_log_probs[:]
 
     def load_network_weights(self, *args, **kwargs) -> None:
-        """Empty, ensures that the method can be called for all agents
+        """Placeholder, ensures that the method can be called for all agents.
+
+        This method should be overridden by subclasses, such that relevant
+        trained parameters stored by self.save_agent() can be loaded.
+        See the DirectPolicyAgent() subclass for an example of such extension.
         """
         pass
 
     def save_agent(self, *args, **kwargs) -> None:
-        """Empty, ensures that the method can be called for all agents
+        """Placeholder, ensures that the method can be called for all agents.
+
+        This method should be overridden by subclasses, such that relevant
+        trained parameters are stored in a loadable format.
+        See the DirectPolicyAgent() subclass for an example of such extension.
         """
         pass
 
     def update_stats(self) -> None:
+        """Update metrics with the outcome of a game and delete self.probs."""
         final_reward = self.rewards[-1]
 
         self.stats["games"] += 1
@@ -125,16 +233,33 @@ class Player():
             self.stats["probs_failure_sum"] += sum(self.probs)
             self.stats["moves_failure_total"] += len(self.probs)
         else:
-            self.stats["probs_succes_sum"] += sum(self.probs)
-            self.stats["moves_succes_total"] += len(self.probs)
+            self.stats["probs_success_sum"] += sum(self.probs)
+            self.stats["moves_success_total"] += len(self.probs)
 
         del self.probs[:]
 
     def log_params(self, neptune_run: neptune.Run) -> None:
+        """Log player parameters in self.params to Neptune.
+
+        Args:
+            neptune_run (neptune.Run): Instance of the current neptune run.
+        """
         self.neptune_id = neptune_run["sys/id"].fetch()
         neptune_run[f"player{self.playerPiece}/params"] = self.params
 
     def log_stats(self, neptune_run: neptune.Run) -> None:
+        """Log player metrics from self.stats to Neptune and reset self.stats.
+
+        In addition to win/loss/tie/illegal-rates, the following is stored:
+            averagePropSuccess: The average probability for the chosen moves
+                in games which ended in the agent winning or tying.
+            averagePropFailure: The average probability for the chosen moves
+                in games which ended in the agent losing or making an illegal
+                move.
+
+        Args:
+            neptune_run (neptune.Run): Instance of the current neptune run.
+        """
         folder_name = f"player{self.playerPiece}/metrics"
         neptune_run[folder_name + "/winrate"].log(
             self.stats["wins"]/self.stats["games"])
@@ -147,9 +272,9 @@ class Player():
 
         neptune_run[folder_name + "/loss_sum"].log(self.stats["loss_sum"])
         try:
-            neptune_run[folder_name + "/averagePropSucces"].log(
-                self.stats["probs_succes_sum"] /
-                self.stats["moves_succes_total"])
+            neptune_run[folder_name + "/averagePropSuccess"].log(
+                self.stats["probs_success_sum"] /
+                self.stats["moves_success_total"])
             neptune_run[folder_name + "/averagePropFailure"].log(
                 self.stats["probs_failure_sum"] /
                 self.stats["moves_failure_total"])
@@ -160,11 +285,27 @@ class Player():
 
 
 class DirectPolicyAgent(nn.Module, Player):
-    '''
-    NOTE: This class initialises with the same keyword arguments as the Player
-    class.
-    '''
+    """Extends Player() to create an agent using a neural network for playing.
+
+    The agent uses a neural network to output probabilities for each column
+    and trains using a Direct Policy Gradient method.
+    The class extends the template Player() class and overwrites the following
+        - select_action,
+        - update_agent,
+        - save_agent,
+        - load_network_weights.
+    The following attributes are provided in addition to those in Player(),
+        Layers in the neural network: L1, L2, L3, L4 and final.
+    as well as the method forward(x), which calculates the agent's decision
+    given a game state.
+
+    This class can serve as a template for agents using neural networks and
+    direct policy - see, for instance, our own extension
+    DirectPolicyAgent_mini and DirectPolicyAgent_large which simply define a
+    smaller and larger network structure, respectively.
+    """
     def __init__(self, **kwargs):
+        """Construct an agent with random weights. See Player() for kwargs."""
         Player.__init__(self, **kwargs)
         nn.Module.__init__(self)
         self.L1 = nn.Linear(42, 200)
@@ -174,6 +315,15 @@ class DirectPolicyAgent(nn.Module, Player):
         self.final = nn.Linear(100, 7)
 
     def forward(self, x):
+        """Pass a game state through the network to decide which move to make.
+
+        Args:
+            x (Tensor): Flattened matrix representation of game state.
+
+        Returns:
+            Tensor: Probability for each column. The final layer is softmax,
+                so the output tensor sums to 1.
+        """
         x = self.L1(x)
         x = F.relu(x)
         x = self.L2(x)
@@ -185,7 +335,19 @@ class DirectPolicyAgent(nn.Module, Player):
         x = self.final(x)
         return F.softmax(x, dim=0)
 
-    def select_action(self, board, legal_moves):
+    def select_action(self,
+                      board: np.ndarray,
+                      legal_moves: list = []):
+        """Choose placement of next piece given game state and legal columns.
+
+        Args:
+            board (np.ndarray): Matrix representation of game state.
+            legal_moves (list): List of indices of non-full (legal) columns.
+                Defaults to [].
+
+        Returns:
+            Tensor: Index of the chosen column.
+        """
         board = board * self.playerPiece
         board_vector = torch.from_numpy(board).float().flatten()
         board_vector = board_vector.to(self.device)
@@ -193,23 +355,17 @@ class DirectPolicyAgent(nn.Module, Player):
         move = Categorical(probs.to("cpu"))
         action = move.sample()
         if legal_moves and action not in legal_moves:
-            # Re-scale probabilities for the legal columns and draw one of the
-            # legal columns
-            # legal_probs = [probs[col].detach().numpy() for col in legal_moves]
-            # print(legal_probs)
-            # legal_probs = np.divide(legal_probs, sum(legal_probs))
-            # action = torch.tensor(random.choices(legal_moves, legal_probs)[0])
-            action = torch.tensor(random.choice(legal_moves)) # old approach
+            action = torch.tensor(random.choice(legal_moves))
 
         self.saved_log_probs.append(move.log_prob(action))
         self.probs.append(probs[action].detach().numpy())
         return action.to("cpu")
 
     def update_agent(self, optimizer) -> None:
-        """NOTE: consider how and when the loss should be logged.
+        """Update network parameters by backpropagating using the optimizer.
 
         Args:
-            optimizer (torch.optim.Optimizer): _description_
+            optimizer (torch.optim.Optimizer): Optimizer object for training.
         """
         loss = [-log_p * r for log_p, r in zip(self.saved_log_probs,
                                                self.rewards)]
@@ -224,13 +380,11 @@ class DirectPolicyAgent(nn.Module, Player):
         # save loss to agent for logging
         self.stats["loss_sum"] += loss.detach().numpy()
 
-        # return loss.detach().numpy()
-
     def save_agent(self,
-                  file_name: str,
-                  optimizer=None,
-                  folder: str = "learned_weights",
-                  store_metadata: bool = True) -> None:
+                   file_name: str,
+                   optimizer=None,
+                   folder: str = "learned_weights",
+                   store_metadata: bool = True) -> None:
         """Save learnable parameters, optimizer dictionary and metadata.
 
         Save data relevant for inference and resuming training with
@@ -296,7 +450,7 @@ class DirectPolicyAgent(nn.Module, Player):
                     },
                     f=full_path)
         else:
-             torch.save(obj={
+            torch.save(obj={
                 'model_state_dict': self.state_dict(),
                 'loss_sum': self.stats['loss_sum']
                     },
@@ -309,7 +463,7 @@ class DirectPolicyAgent(nn.Module, Player):
                 'current_sha': git.Repo(
                                         search_parent_directories=True
                                         ).head.object.hexsha,
-                'neptune_id' : self.neptune_id,
+                'neptune_id': self.neptune_id,
                 'optim_name': optimizer.__class__.__name__
             }
             meta_filename = folder + name + '_metadata' + '.json'
@@ -330,7 +484,11 @@ class DirectPolicyAgent(nn.Module, Player):
 
 
 class DirectPolicyAgent_large(DirectPolicyAgent):
+    """Modifies DirectPolicyAgent() with a much larger network.
+    """
     def __init__(self, **kwargs):
+        """Instantiate agent object and layers. See Player() for kwargs.
+        """
         DirectPolicyAgent.__init__(self, **kwargs)
         self.L1 = nn.Linear(42, 300)
         self.L2 = nn.Linear(300, 500)
@@ -340,6 +498,15 @@ class DirectPolicyAgent_large(DirectPolicyAgent):
         self.L6 = nn.Linear(200, 100)
 
     def forward(self, x):
+        """Pass a game state through the network to decide which move to make.
+
+        Args:
+            x (Tensor): Flattened matrix representation of game state.
+
+        Returns:
+            Tensor: Probability for each column. The final layer is softmax,
+                so the output tensor sums to 1.
+        """
         x = self.L1(x)
         x = F.relu(x)
         x = self.L2(x)
@@ -357,12 +524,25 @@ class DirectPolicyAgent_large(DirectPolicyAgent):
 
 
 class DirectPolicyAgent_mini(DirectPolicyAgent):
+    """Modifies DirectPolicyAgent() with a much smaller network.
+    """
     def __init__(self, **kwargs):
+        """Instantiate agent object and layers. See Player() for kwargs.
+        """
         DirectPolicyAgent.__init__(self, **kwargs)
         self.L1 = nn.Linear(42, 300)
         self.final = nn.Linear(300, 7)
 
     def forward(self, x):
+        """Pass a game state through the network to decide which move to make.
+
+        Args:
+            x (Tensor): Flattened matrix representation of game state.
+
+        Returns:
+            Tensor: Probability for each column. The final layer is softmax,
+                so the output tensor sums to 1.
+        """
         x = self.L1(x)
         x = F.relu(x)
         x = self.final(x)
@@ -370,11 +550,9 @@ class DirectPolicyAgent_mini(DirectPolicyAgent):
 
 
 class HumanPlayer(Player):
-    '''Let user play the game using console input.
-    NOTE: This class initialises with the same keyword arguments as the Player
-    class.
-    '''
+    """Extends Player() to let the user play the game using console input."""
     def __init__(self, **kwargs):
+        """Create new HumanPlayer object. See Player() docs for kwargs."""
         Player.__init__(self, **kwargs)
 
     def select_action(self, board: np.matrix, legal_moves: list = []) -> int:
@@ -383,7 +561,7 @@ class HumanPlayer(Player):
         Args:
             board (np.matrix): The current game board
             legal_moves (list, optional): List of legal moves. Defaults to [].
-                This argument is not used by the function, but is included
+                This argument is not used by the method, but is included
                 since every select_action method needs to have the argument.
 
         Returns:
@@ -393,26 +571,41 @@ class HumanPlayer(Player):
         legal_cols = [col for col, val in enumerate(board[0]) if val == 0]
         chosen_col = int(input("Choose column: ")) - 1
         while chosen_col not in legal_cols:
-            printable_legals = [col+1 for col in legal_cols] # 1-indexed
+            printable_legals = [col+1 for col in legal_cols]  # 1-indexed
             print(f"Illegal column. Choose between {printable_legals}.")
             chosen_col = int(input("Choose column: ")) - 1
         return chosen_col
 
 
 class MinimaxAgent(Player):
+    """Extends Player() to use the Minimax-algorithm for choosing moves.
+    """
     def __init__(self, max_depth=2, **kwargs):
+        """Construct MinimaxAgent() object. See Player) for kwargs.
+
+        Args:
+            max_depth (int, optional): Depth of the game tree to analyze, ie.
+                number of steps to look forward. Note that the game tree grows
+                exponentially and that the implementation isn't very
+                efficient. Should not exceed 2 if used when training agents.
+                Defaults to 2.
+        """
         Player.__init__(self, **kwargs)
         self.max_depth = max_depth
 
-    def select_action(self, board: np.matrix, legal_moves: list = []) -> int:
-        """Selects a column that the agent is going to place their piece in
+    def select_action(self,
+                      board: np.ndarray,
+                      legal_moves: list = []) -> int:
+        """Use the Minimax-algorithm to determine the next move to make.
 
         Args:
-            board (np.matrix): the current state of the board
-            legal_moves (list, optional): the columns that we can legally choose from. Defaults to [].
+            board (np.ndarray): Matrix representation of the game state.
+            legal_moves (list, optional): List of indices of non-full columns.
+                The method will determine legal moves if legal_moves=[].
+                Defaults to [].
 
         Returns:
-            int: the column that is choosen to place a piece in
+            int: Index of the chosen column.
         """
         best_score = -10
         best_col = None
@@ -424,10 +617,13 @@ class MinimaxAgent(Player):
             legal_moves = [col for col, val in enumerate(board[0]) if val == 0]
 
         for col in legal_moves:
-            board = self.place_piece(current_state=board, choice_col=col, player_piece=self.playerPiece)
+            board = self.place_piece(current_state=board,
+                                     choice_col=col,
+                                     player_piece=self.playerPiece)
             score = self.minimax(board=board, depth=0, maximizing=False)
             board = self.remove_piece(board=board, column=col)
-            if score == self.params["not_ended_reward"] and score >= best_score:
+            if score == self.params["not_ended_reward"] and \
+                    score >= best_score:
                 possible_ties.append(col)
                 best_score = score
                 best_col = col
@@ -439,16 +635,20 @@ class MinimaxAgent(Player):
             return random.choice(possible_ties)
         return best_col
 
-    def minimax(self, board: np.matrix, depth: int, maximizing: bool) -> float:
-        """Runs the minimax algorithm on the board
+    def minimax(self,
+                board: np.ndarray,
+                depth: int,
+                maximizing: bool) -> float:
+        """Runs the Minimax algorithm on the board.
 
         Args:
-            board (np.matrix): the current state of the board
-            depth (int): the current depth of the minimax algorithm
-            maximizing (bool): true if it is the maximizing player, and false if minimizing player
+            board (np.ndarray): The current matrix representation of the board.
+            depth (int): The current game tree depth of the minimax algorithm.
+            maximizing (bool): True if it is the maximizing player, and false
+                if it is the minimizing player.
 
         Returns:
-            float: the best score optained within before reacing the 'max_depth'
+            float: The best score obtained before reaching self.max_depth.
         """
         if self.winning_move(board=board):
             if not maximizing:
@@ -463,9 +663,13 @@ class MinimaxAgent(Player):
         if maximizing:
             best_score = None
             for col in range(board.shape[1]):
-                if board[0][col] == 0: # Checks if the column is not filled
-                    board = self.place_piece(current_state=board, choice_col=col, player_piece=self.playerPiece)
-                    score = self.minimax(board=board, depth=depth+1,maximizing=False)
+                if board[0][col] == 0:  # Checks if the column is not filled
+                    board = self.place_piece(current_state=board,
+                                             choice_col=col,
+                                             player_piece=self.playerPiece)
+                    score = self.minimax(board=board,
+                                         depth=depth+1,
+                                         maximizing=False)
                     board = self.remove_piece(board=board, column=col)
                     if best_score is None:
                         best_score = score
@@ -475,9 +679,13 @@ class MinimaxAgent(Player):
         else:
             best_score = None
             for col in range(board.shape[1]):
-                if board[0][col] == 0: # Checks if the column is not filled
-                    board = self.place_piece(current_state=board, choice_col=col, player_piece=self.playerPiece*-1)
-                    score = self.minimax(board=board, depth=depth+1, maximizing=True)
+                if board[0][col] == 0:  # Checks if the column is not filled
+                    board = self.place_piece(current_state=board,
+                                             choice_col=col,
+                                             player_piece=self.playerPiece*-1)
+                    score = self.minimax(board=board,
+                                         depth=depth+1,
+                                         maximizing=True)
                     board = self.remove_piece(board=board, column=col)
                     if best_score is None:
                         best_score = score
@@ -485,16 +693,19 @@ class MinimaxAgent(Player):
                         best_score = score
             return best_score
 
-    def place_piece(self, current_state: np.matrix, choice_col: int, player_piece: int) -> np.matrix:
-        """Places the piece on the board, such that the piece is on top in the given column.
+    def place_piece(self,
+                    current_state: np.ndarray,
+                    choice_col: int,
+                    player_piece: int) -> np.ndarray:
+        """Place a piece on the board in choice_col and return the new board.
 
         Args:
-            current_state (np.matrix): the current state of the board
-            choice_col (int): the column that we want to place a piece in
-            player_piece (int): the piece that we want to place
+            current_state (np.ndarray): Matrix representation of game state.
+            choice_col (int): The column we want to place next piece in.
+            player_piece (int): The piece we want to place.
 
         Returns:
-            np.matrix: the board with the piece placed in the given column
+            np.ndarray: Matrix representation after piece has been placed.
         """
         board = np.flip(current_state, 0)
         for i, row in enumerate(board):
@@ -503,27 +714,28 @@ class MinimaxAgent(Player):
                 break
         return np.flip(board, 0)
 
-    def winning_move(self, board: np.matrix) -> bool:
-        """Checks if there is a player with four connected pieces
+    def winning_move(self, board: np.ndarray) -> bool:
+        """Check if there is a player with four connected pieces.
 
         Args:
-            board (np.matrix): the board that we want to check if there is a winner in
+            board (np.matrix): The game state to check for winner.
 
         Returns:
-            bool: true if there is a player with four connected pieces, and false if not
+            bool: True if there is a player with four connected pieces, False
+                if not
         """
         rows, columns = board.shape
         # Check horizontal locations for win
         for c in range(columns-3):
             for r in range(rows):
-                winning_sum = np.sum(board[r,c:c+4])
+                winning_sum = np.sum(board[r, c:c+4])
                 if winning_sum == 4 or winning_sum == -4:
                     return True
 
         # Check vertical locations for win
         for c in range(columns):
             for r in range(rows-3):
-                winning_sum = np.sum(board[r:r+4,c]) 
+                winning_sum = np.sum(board[r:r+4, c])
                 if winning_sum == 4 or winning_sum == -4:
                     return True
 
@@ -541,26 +753,26 @@ class MinimaxAgent(Player):
 
         return False
 
-    def is_tie(self, board: np.matrix) -> bool:
-        """Checks if the board is filled, which results in a tie
+    def is_tie(self, board: np.ndarray) -> bool:
+        """Check if the board is filled, which results in a tie.
 
         Args:
-            board (np.matrix): the board that we want to check for a tie in
+            board (np.ndarray): Matrix representation of board to check.
 
         Returns:
-            bool: true if the board is filled, and false if not
+            bool: True if the board is filled and False if not.
         """
         return all([val != 0 for val in board[0]])
 
-    def remove_piece(self, board: np.matrix, column: int) -> np.matrix:
-        """Removes the top piece of the board from the choosen column
+    def remove_piece(self, board: np.ndarray, column: int) -> np.ndarray:
+        """Remove the top piece of the board from the specified column.
 
         Args:
-            board (np.matrix): the board that we want to remove a peice from
-            column (int): the column that the piece we want to remove is in
+            board (np.ndarray): Matrix representation of the board to change.
+            column (int): Index of column where top piece should be removed.
 
         Returns:
-            np.matrix: the board with a piece removed from the given column
+            np.ndarray: Matrix representation of the updated board.
         """
         for i, row in enumerate(board):
             if row[column] != 0:
