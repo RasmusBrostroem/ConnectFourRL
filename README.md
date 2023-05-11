@@ -26,6 +26,8 @@ instructions.
 
 ## Requirements
 This project was built using Python version 3.9.13.
-The used packages are listed in `requirements.txt`, which can be used to
-create a virtual environment as described
-[here](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/).  
+The used packages are listed in `requirements.txt` and `req_no_cuda.txt`,
+which can be used to create a virtual environment as described
+[here](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/). 
+Use `requirements.txt` if you have a CUDA-enabled GPU available for
+computations and use `req_no_cuda.txt` if not.  
