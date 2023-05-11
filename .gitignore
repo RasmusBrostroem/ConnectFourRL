@@ -1,5 +1,6 @@
 .neptune
 .idea
+.vscode
 **/__pycache__/
 AgentParameters
 learned_weights
