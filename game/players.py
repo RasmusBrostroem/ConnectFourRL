@@ -581,7 +581,7 @@ class MinimaxAgent(Player):
     """Extends Player() to use the Minimax-algorithm for choosing moves.
     """
     def __init__(self, max_depth=2, **kwargs):
-        """Construct MinimaxAgent() object. See Player) for kwargs.
+        """Construct MinimaxAgent() object. See Player() for kwargs.
 
         Args:
             max_depth (int, optional): Depth of the game tree to analyze, ie.
