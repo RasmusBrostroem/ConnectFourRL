@@ -90,6 +90,17 @@ class connect_four():
                 self.board[i][column] = piece
                 break
 
+    def remove_piece(self, column: int) -> None:
+        """Remove the top piece of the board from the specified column.
+
+        Args:
+            column (int): Index of column where top piece should be removed.
+        """
+        for i, row in enumerate(self.board):
+            if row[column] != 0:
+                self.board[i][column] = 0
+                break
+
     def winning_move(self) -> bool:
         '''
         Checks if the board has a winner and returns boolean

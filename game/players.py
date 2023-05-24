@@ -767,19 +767,3 @@ class MinimaxAgent(Player):
             bool: True if the board is filled and False if not.
         """
         return all([val != 0 for val in board[0]])
-
-    def remove_piece(self, board: np.ndarray, column: int) -> np.ndarray:
-        """Remove the top piece of the board from the specified column.
-
-        Args:
-            board (np.ndarray): Matrix representation of the board to change.
-            column (int): Index of column where top piece should be removed.
-
-        Returns:
-            np.ndarray: Matrix representation of the updated board.
-        """
-        for i, row in enumerate(board):
-            if row[column] != 0:
-                board[i][column] = 0
-                break
-        return board
