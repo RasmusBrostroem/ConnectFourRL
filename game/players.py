@@ -30,6 +30,7 @@ import neptune
 from os import path, mkdir
 import json
 import git
+from connectFour import connect_four
 
 
 class Player():
@@ -143,23 +144,24 @@ class Player():
         self.rewards = []
         self.gamma = self.params["gamma"]
 
-    def select_action(self, board: np.matrix, legal_moves: list = []) -> int:
+    def select_action(self,
+                      game: connect_four,
+                      illegal_moves_allowed: bool = True) -> int:
         """Choose a random valid column to place the next piece in.
 
         Args:
-            board (np.matrix): Current game state in matrix representation.
-            legal_moves (list, optional): List of legal columns. Only provided
+            game (connect_four): Current connect_four game instance.
+            illegal_moves_allowed (bool, optional): bool denoting whether
+                illegal moves are allowed or not. Only provided
                 for extendability, as this method does not actually need the
-                argument but subclasses might. Defaults to [].
+                argument but subclasses might. Defaults to True.
 
         Returns:
             int: Index of the chosen column (0-indexed).
 
         This method should be overridden by subclasses.
         """
-        return random.choice(
-            [col for col, val in enumerate(board[0]) if val == 0]
-            )
+        return random.choice(game.legal_cols())
 
     def calculate_rewards(self) -> None:
         """Calculate the discounted rewards for each move the player made.
