@@ -24,13 +24,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical
-import numpy as np
 import random
 import neptune
 from os import path, mkdir
 import json
 import git
-from connectFour import connect_four
+from game.connectFour import connect_four
+from time import sleep
 
 
 class Player():
@@ -621,11 +621,9 @@ class MinimaxAgent(Player):
         # Make sure the MinimaxAgent always have legal_moves to choose from
         # The reason for this is that this agent can not make illegal moves
         for col in game.legal_cols():
-            board = self.place_piece(current_state=game.return_board(),
-                                     choice_col=col,
-                                     player_piece=self.playerPiece)
-            score = self.minimax(board=board, depth=0, maximizing=False)
-            board = self.remove_piece(board=board, column=col)
+            game.place_piece(column=col, piece=self.playerPiece)
+            score = self.minimax(game=game, depth=0, maximizing=False)
+            game.remove_piece(column=col)
             if score == self.params["not_ended_reward"] and \
                     score >= best_score:
                 possible_ties.append(col)
@@ -640,13 +638,13 @@ class MinimaxAgent(Player):
         return best_col
 
     def minimax(self,
-                board: np.ndarray,
+                game: connect_four,
                 depth: int,
                 maximizing: bool) -> float:
         """Runs the Minimax algorithm on the board.
 
         Args:
-            board (np.ndarray): The current matrix representation of the board.
+            game (connect_four): The current connect four game object.
             depth (int): The current game tree depth of the minimax algorithm.
             maximizing (bool): True if it is the maximizing player, and false
                 if it is the minimizing player.
@@ -654,116 +652,39 @@ class MinimaxAgent(Player):
         Returns:
             float: The best score obtained before reaching self.max_depth.
         """
-        if self.winning_move(board=board):
+        if game.winning_move():
             if not maximizing:
                 return self.params["win_reward"]/(depth+1)
             else:
                 return self.params["loss_reward"]/(depth+1)
-        if self.is_tie(board=board):
+        if game.is_tie():
             return self.params["tie_reward"]
         if depth > self.max_depth:
             return self.params["not_ended_reward"]
 
         if maximizing:
             best_score = None
-            for col in range(board.shape[1]):
-                if board[0][col] == 0:  # Checks if the column is not filled
-                    board = self.place_piece(current_state=board,
-                                             choice_col=col,
-                                             player_piece=self.playerPiece)
-                    score = self.minimax(board=board,
-                                         depth=depth+1,
-                                         maximizing=False)
-                    board = self.remove_piece(board=board, column=col)
-                    if best_score is None:
-                        best_score = score
-                    elif score > best_score:
-                        best_score = score
+            for col in game.legal_cols():
+                game.place_piece(column=col, piece=self.playerPiece)
+                score = self.minimax(game=game,
+                                     depth=depth+1,
+                                     maximizing=False)
+                game.remove_piece(column=col)
+                if best_score is None:
+                    best_score = score
+                elif score > best_score:
+                    best_score = score
             return best_score
         else:
             best_score = None
-            for col in range(board.shape[1]):
-                if board[0][col] == 0:  # Checks if the column is not filled
-                    board = self.place_piece(current_state=board,
-                                             choice_col=col,
-                                             player_piece=self.playerPiece*-1)
-                    score = self.minimax(board=board,
-                                         depth=depth+1,
-                                         maximizing=True)
-                    board = self.remove_piece(board=board, column=col)
-                    if best_score is None:
-                        best_score = score
-                    elif score < best_score:
-                        best_score = score
+            for col in game.legal_cols():
+                game.place_piece(column=col, piece=self.playerPiece*-1)
+                score = self.minimax(game=game,
+                                     depth=depth+1,
+                                     maximizing=True)
+                game.remove_piece(column=col)
+                if best_score is None:
+                    best_score = score
+                elif score < best_score:
+                    best_score = score
             return best_score
-
-    def place_piece(self,
-                    current_state: np.ndarray,
-                    choice_col: int,
-                    player_piece: int) -> np.ndarray:
-        """Place a piece on the board in choice_col and return the new board.
-
-        Args:
-            current_state (np.ndarray): Matrix representation of game state.
-            choice_col (int): The column we want to place next piece in.
-            player_piece (int): The piece we want to place.
-
-        Returns:
-            np.ndarray: Matrix representation after piece has been placed.
-        """
-        board = np.flip(current_state, 0)
-        for i, row in enumerate(board):
-            if row[choice_col] == 0:
-                board[i][choice_col] = player_piece
-                break
-        return np.flip(board, 0)
-
-    def winning_move(self, board: np.ndarray) -> bool:
-        """Check if there is a player with four connected pieces.
-
-        Args:
-            board (np.matrix): The game state to check for winner.
-
-        Returns:
-            bool: True if there is a player with four connected pieces, False
-                if not
-        """
-        rows, columns = board.shape
-        # Check horizontal locations for win
-        for c in range(columns-3):
-            for r in range(rows):
-                winning_sum = np.sum(board[r, c:c+4])
-                if winning_sum == 4 or winning_sum == -4:
-                    return True
-
-        # Check vertical locations for win
-        for c in range(columns):
-            for r in range(rows-3):
-                winning_sum = np.sum(board[r:r+4, c])
-                if winning_sum == 4 or winning_sum == -4:
-                    return True
-
-        # Check diagonals for win
-        for c in range(columns-3):
-            for r in range(rows-3):
-                sub_matrix = board[r:r+4, c:c+4]
-                # diag1 is the negative slope diag
-                diag1 = sub_matrix.trace()
-                # diag2 is the positive slope diag
-                diag2 = np.fliplr(sub_matrix).trace()
-
-                if diag1 == 4 or diag1 == -4 or diag2 == 4 or diag2 == -4:
-                    return True
-
-        return False
-
-    def is_tie(self, board: np.ndarray) -> bool:
-        """Check if the board is filled, which results in a tie.
-
-        Args:
-            board (np.ndarray): Matrix representation of board to check.
-
-        Returns:
-            bool: True if the board is filled and False if not.
-        """
-        return all([val != 0 for val in board[0]])
