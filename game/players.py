@@ -599,15 +599,17 @@ class MinimaxAgent(Player):
         self.max_depth = max_depth
 
     def select_action(self,
-                      board: np.ndarray,
-                      legal_moves: list = []) -> int:
+                      game: connect_four,
+                      illegal_moves_allowed: bool = True) -> int:
         """Use the Minimax-algorithm to determine the next move to make.
 
         Args:
-            board (np.ndarray): Matrix representation of the game state.
-            legal_moves (list, optional): List of indices of non-full columns.
-                The method will determine legal moves if legal_moves=[].
-                Defaults to [].
+            game (connect_four): The current connect four game object.
+            illegal_moves_allowed (bool, optional): bool indicating whether
+                or not illegal moves are allowed.
+                The method will always play legal moves even if
+                illegal_moves_allowed=True.
+                Defaults to True.
 
         Returns:
             int: Index of the chosen column.
@@ -618,11 +620,8 @@ class MinimaxAgent(Player):
 
         # Make sure the MinimaxAgent always have legal_moves to choose from
         # The reason for this is that this agent can not make illegal moves
-        if not legal_moves:
-            legal_moves = [col for col, val in enumerate(board[0]) if val == 0]
-
-        for col in legal_moves:
-            board = self.place_piece(current_state=board,
+        for col in game.legal_cols():
+            board = self.place_piece(current_state=game.return_board(),
                                      choice_col=col,
                                      player_piece=self.playerPiece)
             score = self.minimax(board=board, depth=0, maximizing=False)
