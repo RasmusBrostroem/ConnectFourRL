@@ -96,9 +96,9 @@ class connect_four():
         Args:
             column (int): Index of column where top piece should be removed.
         """
-        for i, row in enumerate(self.board):
+        for i, row in enumerate(np.flip(self.board, 0)):
             if row[column] != 0:
-                self.board[i][column] = 0
+                self.board[self.rows - i - 1][column] = 0
                 break
 
     def winning_move(self) -> bool:
