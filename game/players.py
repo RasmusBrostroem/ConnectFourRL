@@ -338,26 +338,26 @@ class DirectPolicyAgent(nn.Module, Player):
         return F.softmax(x, dim=0)
 
     def select_action(self,
-                      board: np.ndarray,
-                      legal_moves: list = []):
-        """Choose placement of next piece given game state and legal columns.
+                      game: connect_four,
+                      illegal_moves_allowed: bool = True):
+        """Choose placement of next piece given game and illegal move rule.
 
         Args:
-            board (np.ndarray): Matrix representation of game state.
-            legal_moves (list): List of indices of non-full (legal) columns.
-                Defaults to [].
+            game (connect_four): Current connect_four game object.
+            illegal_moves_allowed (bool): bool indicating whether or not
+                illegal moves are allowed. Defaults to True.
 
         Returns:
             Tensor: Index of the chosen column.
         """
-        board = board * self.playerPiece
+        board = game.return_board() * self.playerPiece
         board_vector = torch.from_numpy(board).float().flatten()
         board_vector = board_vector.to(self.device)
         probs = self.forward(board_vector)
         move = Categorical(probs.to("cpu"))
         action = move.sample()
-        if legal_moves and action not in legal_moves:
-            action = torch.tensor(random.choice(legal_moves))
+        if not illegal_moves_allowed and action not in game.legal_cols():
+            action = torch.tensor(random.choice(game.legal_cols()))
 
         self.saved_log_probs.append(move.log_prob(action))
         self.probs.append(probs[action].detach().numpy())
