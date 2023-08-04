@@ -184,12 +184,3 @@ class Env():
 
 
 
-    # def configureRewards(self, win, loss, tie, illegal):
-    #     '''
-    #     Function to change the standard rewards in the game to something new
-    #     '''
-    #     self.win = win
-    #     self.loss = loss
-    #     self.tie = tie
-    #     self.illegal = illegal
-
