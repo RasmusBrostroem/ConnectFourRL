@@ -181,7 +181,7 @@ class Env():
 
     def self_play(self) -> None:
         self.reset()
-        # reset gradient here?
+        # reset gradient here? (probably better to let agent handle this itself)
 
         # while True
         # select action
