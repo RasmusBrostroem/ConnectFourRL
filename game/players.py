@@ -585,7 +585,7 @@ class HumanPlayer(Player):
 class MinimaxAgent(Player):
     """Extends Player() to use the Minimax-algorithm for choosing moves.
     """
-    def __init__(self, max_depth=2, **kwargs):
+    def __init__(self, max_depth=1, **kwargs):
         """Construct MinimaxAgent() object. See Player() for kwargs.
 
         Args:
@@ -593,7 +593,7 @@ class MinimaxAgent(Player):
                 number of steps to look forward. Note that the game tree grows
                 exponentially and that the implementation isn't very
                 efficient. Should not exceed 2 if used when training agents.
-                Defaults to 2.
+                Defaults to 1.
         """
         Player.__init__(self, **kwargs)
         self.max_depth = max_depth
@@ -614,7 +614,7 @@ class MinimaxAgent(Player):
         Returns:
             int: Index of the chosen column.
         """
-        best_score = -10
+        best_score = self.params["loss_reward"] - 1
         best_col = None
         possible_ties = []
 
