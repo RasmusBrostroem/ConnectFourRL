@@ -63,7 +63,7 @@ class Player():
             gamma: Discount factor used for calculating rewards.
 
     Methods:
-        select_action(board, legal_moves=[]): Decide (randomly) where to place
+        select_action(game, legal_moves=[]): Decide (randomly) where to place
             the next piece.
         calculate_rewards(): Calculates discounted rewards at end of episode.
         update_agent(optimizer=None): Placeholder for updating network
