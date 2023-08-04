@@ -121,11 +121,8 @@ class Env():
         """
 
         # Making current player select an action
-        if self.allow_illegal_moves:
-            col_choice = self.currentPlayer.select_action(board = self.game.return_board())
-        else:
-            legal_moves = self.game.legal_cols()
-            col_choice = self.currentPlayer.select_action(board = self.game.return_board(), legal_moves = legal_moves)
+        col_choice = self.currentPlayer.select_action(game=self.game,
+                                                      illegal_moves_allowed=self.allow_illegal_moves)
 
         # Checks if the choosen column is legal
         is_legal = self.game.is_legal(column=col_choice)
@@ -135,7 +132,7 @@ class Env():
 
         # Assigns rewards to the players
         self.assign_rewards(is_legal_move=is_legal)
-        
+      
         return self.game.is_done(is_legal_move=is_legal)
 
     def render(self, delay = 1000):
@@ -144,7 +141,7 @@ class Env():
         '''
         self.game.draw_board()
         pg.time.wait(delay)
-    
+  
     def change_player(self) -> None:
         if self.currentPlayer is self.player1:
             self.currentPlayer = self.player2

@@ -24,12 +24,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical
-import numpy as np
 import random
 import neptune
 from os import path, mkdir
 import json
 import git
+from game.connectFour import connect_four
 
 
 class Player():
@@ -62,7 +62,7 @@ class Player():
             gamma: Discount factor used for calculating rewards.
 
     Methods:
-        select_action(board, legal_moves=[]): Decide (randomly) where to place
+        select_action(game, legal_moves=[]): Decide (randomly) where to place
             the next piece.
         calculate_rewards(): Calculates discounted rewards at end of episode.
         update_agent(optimizer=None): Placeholder for updating network
@@ -143,23 +143,24 @@ class Player():
         self.rewards = []
         self.gamma = self.params["gamma"]
 
-    def select_action(self, board: np.matrix, legal_moves: list = []) -> int:
+    def select_action(self,
+                      game: connect_four,
+                      illegal_moves_allowed: bool = True) -> int:
         """Choose a random valid column to place the next piece in.
 
         Args:
-            board (np.matrix): Current game state in matrix representation.
-            legal_moves (list, optional): List of legal columns. Only provided
+            game (connect_four): Current connect_four game instance.
+            illegal_moves_allowed (bool, optional): bool denoting whether
+                illegal moves are allowed or not. Only provided
                 for extendability, as this method does not actually need the
-                argument but subclasses might. Defaults to [].
+                argument but subclasses might. Defaults to True.
 
         Returns:
             int: Index of the chosen column (0-indexed).
 
         This method should be overridden by subclasses.
         """
-        return random.choice(
-            [col for col, val in enumerate(board[0]) if val == 0]
-            )
+        return random.choice(game.legal_cols())
 
     def calculate_rewards(self) -> None:
         """Calculate the discounted rewards for each move the player made.
@@ -336,26 +337,26 @@ class DirectPolicyAgent(nn.Module, Player):
         return F.softmax(x, dim=0)
 
     def select_action(self,
-                      board: np.ndarray,
-                      legal_moves: list = []):
-        """Choose placement of next piece given game state and legal columns.
+                      game: connect_four,
+                      illegal_moves_allowed: bool = True):
+        """Choose placement of next piece given game and illegal move rule.
 
         Args:
-            board (np.ndarray): Matrix representation of game state.
-            legal_moves (list): List of indices of non-full (legal) columns.
-                Defaults to [].
+            game (connect_four): Current connect_four game object.
+            illegal_moves_allowed (bool): bool indicating whether or not
+                illegal moves are allowed. Defaults to True.
 
         Returns:
             Tensor: Index of the chosen column.
         """
-        board = board * self.playerPiece
+        board = game.return_board() * self.playerPiece
         board_vector = torch.from_numpy(board).float().flatten()
         board_vector = board_vector.to(self.device)
         probs = self.forward(board_vector)
         move = Categorical(probs.to("cpu"))
         action = move.sample()
-        if legal_moves and action not in legal_moves:
-            action = torch.tensor(random.choice(legal_moves))
+        if not illegal_moves_allowed and action not in game.legal_cols():
+            action = torch.tensor(random.choice(game.legal_cols()))
 
         self.saved_log_probs.append(move.log_prob(action))
         self.probs.append(probs[action].detach().numpy())
@@ -555,12 +556,15 @@ class HumanPlayer(Player):
         """Create new HumanPlayer object. See Player() docs for kwargs."""
         Player.__init__(self, **kwargs)
 
-    def select_action(self, board: np.matrix, legal_moves: list = []) -> int:
+    def select_action(self,
+                      game: connect_four,
+                      illegal_moves_allowed: bool = True) -> int:
         """Ask for user input to choose a column.
 
         Args:
-            board (np.matrix): The current game board
-            legal_moves (list, optional): List of legal moves. Defaults to [].
+            game (connect_four): The current connect four game object
+            illegal_moves_allowed (bool, optional): bool indicating whether
+                or not illegal moves are allowed. Defaults to True.
                 This argument is not used by the method, but is included
                 since every select_action method needs to have the argument.
 
@@ -568,10 +572,10 @@ class HumanPlayer(Player):
             int: The column to place the piece in, 0-indexed.
         """
         # Calculating legal_cols since legal_moves may be an empty list
-        legal_cols = [col for col, val in enumerate(board[0]) if val == 0]
         chosen_col = int(input("Choose column: ")) - 1
-        while chosen_col not in legal_cols:
-            printable_legals = [col+1 for col in legal_cols]  # 1-indexed
+        while chosen_col not in game.legal_cols():
+            # 1-indexed
+            printable_legals = [col+1 for col in game.legal_cols()]
             print(f"Illegal column. Choose between {printable_legals}.")
             chosen_col = int(input("Choose column: ")) - 1
         return chosen_col
@@ -580,48 +584,45 @@ class HumanPlayer(Player):
 class MinimaxAgent(Player):
     """Extends Player() to use the Minimax-algorithm for choosing moves.
     """
-    def __init__(self, max_depth=2, **kwargs):
-        """Construct MinimaxAgent() object. See Player) for kwargs.
+    def __init__(self, max_depth=1, **kwargs):
+        """Construct MinimaxAgent() object. See Player() for kwargs.
 
         Args:
             max_depth (int, optional): Depth of the game tree to analyze, ie.
                 number of steps to look forward. Note that the game tree grows
                 exponentially and that the implementation isn't very
                 efficient. Should not exceed 2 if used when training agents.
-                Defaults to 2.
+                Defaults to 1.
         """
         Player.__init__(self, **kwargs)
         self.max_depth = max_depth
 
     def select_action(self,
-                      board: np.ndarray,
-                      legal_moves: list = []) -> int:
+                      game: connect_four,
+                      illegal_moves_allowed: bool = True) -> int:
         """Use the Minimax-algorithm to determine the next move to make.
 
         Args:
-            board (np.ndarray): Matrix representation of the game state.
-            legal_moves (list, optional): List of indices of non-full columns.
-                The method will determine legal moves if legal_moves=[].
-                Defaults to [].
+            game (connect_four): The current connect four game object.
+            illegal_moves_allowed (bool, optional): bool indicating whether
+                or not illegal moves are allowed.
+                The method will always play legal moves even if
+                illegal_moves_allowed=True.
+                Defaults to True.
 
         Returns:
             int: Index of the chosen column.
         """
-        best_score = -10
+        best_score = self.params["loss_reward"] - 1
         best_col = None
         possible_ties = []
 
         # Make sure the MinimaxAgent always have legal_moves to choose from
         # The reason for this is that this agent can not make illegal moves
-        if not legal_moves:
-            legal_moves = [col for col, val in enumerate(board[0]) if val == 0]
-
-        for col in legal_moves:
-            board = self.place_piece(current_state=board,
-                                     choice_col=col,
-                                     player_piece=self.playerPiece)
-            score = self.minimax(board=board, depth=0, maximizing=False)
-            board = self.remove_piece(board=board, column=col)
+        for col in game.legal_cols():
+            game.place_piece(column=col, piece=self.playerPiece)
+            score = self.minimax(game=game, depth=0, maximizing=False)
+            game.remove_piece(column=col)
             if score == self.params["not_ended_reward"] and \
                     score >= best_score:
                 possible_ties.append(col)
@@ -636,13 +637,13 @@ class MinimaxAgent(Player):
         return best_col
 
     def minimax(self,
-                board: np.ndarray,
+                game: connect_four,
                 depth: int,
                 maximizing: bool) -> float:
         """Runs the Minimax algorithm on the board.
 
         Args:
-            board (np.ndarray): The current matrix representation of the board.
+            game (connect_four): The current connect four game object.
             depth (int): The current game tree depth of the minimax algorithm.
             maximizing (bool): True if it is the maximizing player, and false
                 if it is the minimizing player.
@@ -650,135 +651,42 @@ class MinimaxAgent(Player):
         Returns:
             float: The best score obtained before reaching self.max_depth.
         """
-        if self.winning_move(board=board):
+        if game.winning_move():
             if not maximizing:
                 return self.params["win_reward"]/(depth+1)
             else:
                 return self.params["loss_reward"]/(depth+1)
-        if self.is_tie(board=board):
+        if game.is_tie():
             return self.params["tie_reward"]
         if depth > self.max_depth:
             return self.params["not_ended_reward"]
 
         if maximizing:
             best_score = None
-            for col in range(board.shape[1]):
-                if board[0][col] == 0:  # Checks if the column is not filled
-                    board = self.place_piece(current_state=board,
-                                             choice_col=col,
-                                             player_piece=self.playerPiece)
-                    score = self.minimax(board=board,
-                                         depth=depth+1,
-                                         maximizing=False)
-                    board = self.remove_piece(board=board, column=col)
-                    if best_score is None:
-                        best_score = score
-                    elif score > best_score:
-                        best_score = score
+            for col in game.legal_cols():
+                game.place_piece(column=col, piece=self.playerPiece)
+                score = self.minimax(game=game,
+                                     depth=depth+1,
+                                     maximizing=False)
+                game.remove_piece(column=col)
+                if best_score is None:
+                    best_score = score
+                elif score > best_score:
+                    best_score = score
             return best_score
         else:
             best_score = None
-            for col in range(board.shape[1]):
-                if board[0][col] == 0:  # Checks if the column is not filled
-                    board = self.place_piece(current_state=board,
-                                             choice_col=col,
-                                             player_piece=self.playerPiece*-1)
-                    score = self.minimax(board=board,
-                                         depth=depth+1,
-                                         maximizing=True)
-                    board = self.remove_piece(board=board, column=col)
-                    if best_score is None:
-                        best_score = score
-                    elif score < best_score:
-                        best_score = score
+            for col in game.legal_cols():
+                game.place_piece(column=col, piece=self.playerPiece*-1)
+                score = self.minimax(game=game,
+                                     depth=depth+1,
+                                     maximizing=True)
+                game.remove_piece(column=col)
+                if best_score is None:
+                    best_score = score
+                elif score < best_score:
+                    best_score = score
             return best_score
-
-    def place_piece(self,
-                    current_state: np.ndarray,
-                    choice_col: int,
-                    player_piece: int) -> np.ndarray:
-        """Place a piece on the board in choice_col and return the new board.
-
-        Args:
-            current_state (np.ndarray): Matrix representation of game state.
-            choice_col (int): The column we want to place next piece in.
-            player_piece (int): The piece we want to place.
-
-        Returns:
-            np.ndarray: Matrix representation after piece has been placed.
-        """
-        board = np.flip(current_state, 0)
-        for i, row in enumerate(board):
-            if row[choice_col] == 0:
-                board[i][choice_col] = player_piece
-                break
-        return np.flip(board, 0)
-
-    def winning_move(self, board: np.ndarray) -> bool:
-        """Check if there is a player with four connected pieces.
-
-        Args:
-            board (np.matrix): The game state to check for winner.
-
-        Returns:
-            bool: True if there is a player with four connected pieces, False
-                if not
-        """
-        rows, columns = board.shape
-        # Check horizontal locations for win
-        for c in range(columns-3):
-            for r in range(rows):
-                winning_sum = np.sum(board[r, c:c+4])
-                if winning_sum == 4 or winning_sum == -4:
-                    return True
-
-        # Check vertical locations for win
-        for c in range(columns):
-            for r in range(rows-3):
-                winning_sum = np.sum(board[r:r+4, c])
-                if winning_sum == 4 or winning_sum == -4:
-                    return True
-
-        # Check diagonals for win
-        for c in range(columns-3):
-            for r in range(rows-3):
-                sub_matrix = board[r:r+4, c:c+4]
-                # diag1 is the negative slope diag
-                diag1 = sub_matrix.trace()
-                # diag2 is the positive slope diag
-                diag2 = np.fliplr(sub_matrix).trace()
-
-                if diag1 == 4 or diag1 == -4 or diag2 == 4 or diag2 == -4:
-                    return True
-
-        return False
-
-    def is_tie(self, board: np.ndarray) -> bool:
-        """Check if the board is filled, which results in a tie.
-
-        Args:
-            board (np.ndarray): Matrix representation of board to check.
-
-        Returns:
-            bool: True if the board is filled and False if not.
-        """
-        return all([val != 0 for val in board[0]])
-
-    def remove_piece(self, board: np.ndarray, column: int) -> np.ndarray:
-        """Remove the top piece of the board from the specified column.
-
-        Args:
-            board (np.ndarray): Matrix representation of the board to change.
-            column (int): Index of column where top piece should be removed.
-
-        Returns:
-            np.ndarray: Matrix representation of the updated board.
-        """
-        for i, row in enumerate(board):
-            if row[column] != 0:
-                board[i][column] = 0
-                break
-        return board
 
 
 class TDAgent(DirectPolicyAgent):
