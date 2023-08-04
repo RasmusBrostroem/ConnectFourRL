@@ -698,7 +698,7 @@ class TDAgent(DirectPolicyAgent):
 
     Adds the following methods:
     """
-    def __init__(self, **kwargs):
+    def __init__(self, train=True, **kwargs):
         """Construct TDAgent object.
 
         Does not call the init of DirectPolicyAgent to avoid copying its
@@ -707,11 +707,15 @@ class TDAgent(DirectPolicyAgent):
         Player.__init__(self, **kwargs)
         nn.Module.__init__(self)
         self.L1 = nn.Linear(84, 50)
-        self.L2 = nn.Linear(50, 3)
-        # TODO: eligibility traces (torch tensor with correct dims)
-        # TODO: We need two traces? one for each player piece
-        # TODO: Lambda value (as kwarg)
-        # TODO: alpha value
+        self.L2 = nn.Linear(50, 1)
+        self.is_training = train
+        # creating eligibility traces
+        self.eligibility_dict = {}
+        for name, param in self.named_parameters():
+            self.eligibility_dict[name] = torch.zeros(param.shape)
+        self.gamma = 0.9
+        self.Lambda = 1
+        self.alpha = 0.1
 
     def forward(self, x):
         """Pass a game state through the network to estimate its value.
@@ -728,11 +732,11 @@ class TDAgent(DirectPolicyAgent):
         x = self.L2(x)
         return F.sigmoid(x)
 
-    def represent_binary(self, x):
+    def represent_binary(self, game_state):
         """_summary_
 
         Args:
-            x (_type_): _description_
+            game_state (_type_): _description_
 
         Returns:
             _type_: _description_
@@ -749,45 +753,76 @@ class TDAgent(DirectPolicyAgent):
         #     binary_game_state.append(0)
         #     binary_game_state.append(1)
 
-        # TODO: make sure that the following works (agent always sees boards as it is)
-        opponent_positions = [1 if p == self.playerPiece*-1 else 0 for p in x]
-        own_positions = [1 if p == self.playerPiece else 0 for p in x]
+        flattened_board = torch.from_numpy(game_state).float().flatten()
+        opponent_positions = [1 if p == self.playerPiece*-1 else 0 for p in flattened_board]
+        own_positions = [1 if p == self.playerPiece else 0 for p in flattened_board]
         binary_game_state = opponent_positions + own_positions
-        # TODO: Torchitensorfy game state
+        binary_game_state = torch.FloatTensor(binary_game_state)
         return binary_game_state
 
     def calculate_rewards(self) -> None:
         # NOTE: Only defining to make sure this is not messed with by others
         pass
 
-    def select_action(self, board: np.ndarray, legal_moves: list = []):
-        """NOTE: Board needs to be returned from connectFour.return_board()
-
+    def select_action(self,
+                      game: connect_four,
+                      illegal_moves_allowed: bool = False):
+        """
         Args:
             board (np.ndarray): _description_
-            legal_moves (list, optional): _description_. Defaults to [].
+            illegal_moves_allowed (list, optional): UNUSED.
 
         Returns:
             _type_: _description_
         """
         values_dict = {}  # Initialise dictionary of move:v_hat pairs
-        for move in legal_moves: # TODO: Create legal moves?
-            # TODO: How to place pieces? Entire game is being passed instead of board, agent places and removes itself
+        legal_moves = game.legal_cols()
+        for move in legal_moves:
+            game.place_piece(column=move, piece=self.playerPiece)
             # NOTE: agent does not need to know if it wins or ties, only place
-            # winningmove and tie should be handled in Env.self_play()
-            # next_board = 
-            flattened = None  # TODO: use torch to flatten?
-            binary_rep = self.represent_binary(flattened)
+            next_board = game.return_board()
+            binary_rep = self.represent_binary(next_board)
             with torch.no_grad():
                 v_hat = self.forward(binary_rep)
             values_dict[move] = v_hat
+            game.remove_piece(column=move)
+
         best_move = max(values_dict, key=values_dict.get)
-        # TODO: forward pass this column again with autograd enabled
-        # the gradient should now be usable for updating
+        if self.is_training:
+            self.incremental_update(self,
+                                    game=game,
+                                    best_move_valuation=values_dict[best_move],
+                                    best_move=best_move)
         return best_move
 
-    def update_agent(self, optimizer) -> None:
-        # call this after each action selected
-        # use update rule with self.eligibility_trace
-
+    def update_agent(self, optimizer=None) -> None:
+        # NOT USED
         pass
+
+    def incremental_update(self,
+                           game: connect_four,
+                           best_move_valuation: float,
+                           best_move: int) -> None:
+        
+        game.place_piece(column=best_move,
+                         piece=self.playerPiece)
+        reward = self.params["win_reward"] if game.winning_move() else 0
+        game.remove_piece(column=best_move)
+        
+        # reset gradient
+        self
+        # update each part of weights
+        v_hat = self.forward(x=self.represent_binary(game_state=game.return_board))
+        v_hat.backward()
+        with torch.no_grad():
+            for name, param in self.named_parameters:
+                # update eligibility trace
+                self.eligibility_dict[name] = \
+                    self.gamma * self.Lambda * self.eligibility_dict[name]\
+                    + param.grad
+                # multiply with new evidence
+                w_change = self.alpha * \
+                    (reward + self.gamma*best_move_valuation - v_hat)\
+                    * self.eligibility_dict[name]    
+                # adding to weights
+                param += w_change
