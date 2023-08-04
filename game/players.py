@@ -779,3 +779,103 @@ class MinimaxAgent(Player):
                 board[i][column] = 0
                 break
         return board
+
+
+class TDAgent(DirectPolicyAgent):
+    """Agent using TD(Lambda), extends methods of DirectPolicyAgent.
+
+    Inspired by Tesauro's implementation of TD-Gammon as presented in RLbook.
+
+    Overwrites the following methods:
+
+    Adds the following methods:
+    """
+    def __init__(self, **kwargs):
+        """Construct TDAgent object.
+
+        Does not call the init of DirectPolicyAgent to avoid copying its
+        network architecture.
+        """
+        Player.__init__(self, **kwargs)
+        nn.Module.__init__(self)
+        self.L1 = nn.Linear(86, 50) #TODO: change to 84
+        self.L2 = nn.Linear(50, 3)
+        # TODO: eligibility traces (torch tensor with correct dims)
+        # TODO: We need two traces? one for each player piece
+        # TODO: Lambda value (as kwarg)
+        # TODO: alpha value
+
+    def forward(self, x):
+        """Pass a game state through the network to estimate its value.
+
+        Args:
+            x (Tensor): Flattened binary representation of game state.
+
+        Returns:
+            Tensor: Probability for each column. The final layer is softmax,
+                so the output tensor sums to 1.
+        """
+        x = self.L1(x)
+        x = F.sigmoid(x)
+        x = self.L2(x)
+        return F.sigmoid(x)
+
+    def represent_binary(self, x):
+        """_summary_
+
+        Args:
+            x (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        # TODO: make sure that the following works (agent always sees boards as it is)
+        # NOTE: alternative would be to always have opponent at top and own at bottom (regardless of color)
+        p1_positions = [1 if p == 1 else 0 for p in x] #TODO: change to alternative, remove last 2 nodes and use self.playerpiece
+        pm1_positions = [1 if p == -1 else 0 for p in x]
+        binary_game_state = p1_positions + pm1_positions
+        # TODO: make sure that playerPiece corresponds to current player turn
+        if self.playerPiece == 1:
+            binary_game_state.append(1)
+            binary_game_state.append(0)
+        else:
+            binary_game_state.append(0)
+            binary_game_state.append(1)
+        # TODO: Torchitensorfy game state
+        return binary_game_state
+
+    def calculate_rewards(self) -> None:
+        # NOTE: Only defining to make sure this is not messed with by others
+        pass
+
+    def select_action(self, board: np.ndarray, legal_moves: list = []):
+        """NOTE: Board needs to be returned from connectFour.return_board()
+
+        Args:
+            board (np.ndarray): _description_
+            legal_moves (list, optional): _description_. Defaults to [].
+
+        Returns:
+            _type_: _description_
+        """
+        values_dict = {}  # Initialise dictionary of move:v_hat pairs
+        for move in legal_moves: # TODO: Create legal moves?
+            # TODO: How to place pieces? Entire game is being passed instead of board, agent places and removes itself
+            # NOTE: agent does not need to know if it wins or ties, only place
+            # winningmove and tie should be handled in Env.self_play()
+            # next_board = 
+            flattened = None  # TODO: use torch to flatten?
+            binary_rep = self.represent_binary(flattened)
+            with torch.no_grad():
+                v_hat = self.forward(binary_rep)
+            values_dict[move] = v_hat
+        best_move = max(values_dict, key=values_dict.get)
+        # TODO: forward pass this column again with autograd enabled
+        # the gradient should now be usable for updating
+        return best_move
+
+    def update_agent(self, optimizer) -> None:
+        # call this after each action selected
+        # use update rule with self.eligibility_trace
+
+        pass
