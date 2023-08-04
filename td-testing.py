@@ -49,6 +49,23 @@ v_hat = model.forward(x)
 print("v_hat", v_hat)
 v_hat.backward()
 print("grad after", model.L1.weight.grad)
+print("shape of grad L1 weight", model.L1.weight.grad.shape)
+print("shape of grad L1 bias", model.L1.bias.grad.shape)
+print("param values", model.L1.weight)
+print("param shape", model.L1.weight.shape)
+print(v_hat * torch.tensor([1, 2]))
+paramOriginal = []
+with torch.no_grad():
+    for name, param in model.named_parameters():
+        paramOriginal.append(torch.clone(param))
+        print(param.shape)
+        print(torch.zeros(param.shape))
+        param *= 0.2
+
+for i, param in enumerate(model.parameters()):
+    print(paramOriginal[i] != param)
+
+
 # torch.set_grad_enabled(False)
 # v_hat = model.forward(x)
 # print("v hat", v_hat)
