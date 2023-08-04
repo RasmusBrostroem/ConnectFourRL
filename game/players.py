@@ -798,7 +798,7 @@ class TDAgent(DirectPolicyAgent):
         """
         Player.__init__(self, **kwargs)
         nn.Module.__init__(self)
-        self.L1 = nn.Linear(86, 50) #TODO: change to 84
+        self.L1 = nn.Linear(84, 50)
         self.L2 = nn.Linear(50, 3)
         # TODO: eligibility traces (torch tensor with correct dims)
         # TODO: We need two traces? one for each player piece
@@ -829,18 +829,22 @@ class TDAgent(DirectPolicyAgent):
         Returns:
             _type_: _description_
         """
+        # NOTE: alternative approach (requires 2 extra nodes in self.L1)
+        # p1_positions = [1 if p == 1 else 0 for p in x]
+        # pm1_positions = [1 if p == -1 else 0 for p in x]
+        # binary_game_state = p1_positions + pm1_positions
+        # # make sure that playerPiece corresponds to current player turn
+        # if self.playerPiece == 1:
+        #     binary_game_state.append(1)
+        #     binary_game_state.append(0)
+        # else:
+        #     binary_game_state.append(0)
+        #     binary_game_state.append(1)
+
         # TODO: make sure that the following works (agent always sees boards as it is)
-        # NOTE: alternative would be to always have opponent at top and own at bottom (regardless of color)
-        p1_positions = [1 if p == 1 else 0 for p in x] #TODO: change to alternative, remove last 2 nodes and use self.playerpiece
-        pm1_positions = [1 if p == -1 else 0 for p in x]
-        binary_game_state = p1_positions + pm1_positions
-        # TODO: make sure that playerPiece corresponds to current player turn
-        if self.playerPiece == 1:
-            binary_game_state.append(1)
-            binary_game_state.append(0)
-        else:
-            binary_game_state.append(0)
-            binary_game_state.append(1)
+        opponent_positions = [1 if p == self.playerPiece*-1 else 0 for p in x]
+        own_positions = [1 if p == self.playerPiece else 0 for p in x]
+        binary_game_state = opponent_positions + own_positions
         # TODO: Torchitensorfy game state
         return binary_game_state
 
