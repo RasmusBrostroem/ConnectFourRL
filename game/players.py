@@ -30,7 +30,6 @@ from os import path, mkdir
 import json
 import git
 from game.connectFour import connect_four
-from time import sleep
 
 
 class Player():
