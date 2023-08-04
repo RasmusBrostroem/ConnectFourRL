@@ -182,5 +182,15 @@ class Env():
             
             self.change_player()
 
+    def self_play(self) -> None:
+        self.reset()
+        # reset gradient here?
 
+        # while True
+        # select action
+        # check if done
+            # assign reward
+            # update using reward and break
 
+        # update (without reward)
+        # change currentPlayer.playerPiece instead of calling self.change_player()
