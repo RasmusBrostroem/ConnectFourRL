@@ -181,13 +181,21 @@ class Env():
 
     def self_play(self) -> None:
         self.reset()
-        # reset gradient here? (probably better to let agent handle this itself)
+        # Assume that the self-playing agent is always player1
+        self.currentPlayer = self.player1
 
-        # while True
-        # select action
-        # check if done
-            # assign reward
-            # update using reward and break
+        while True:
+            self.check_user_events()
+            if self.display_game:
+                self.render()
 
-        # update (without reward)
-        # change currentPlayer.playerPiece instead of calling self.change_player()
+            done = self.step()
+
+            if done:
+                self.player1.update_stats()
+                if self.display_game:
+                    self.render(delay=self.params.win_screen_delay)
+                break
+
+            self.player1.playerPiece *= -1
+
