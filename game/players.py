@@ -790,8 +790,7 @@ class TDAgent(DirectPolicyAgent):
 
         best_move = max(values_dict, key=values_dict.get)
         if self.is_training:
-            self.incremental_update(self,
-                                    game=game,
+            self.incremental_update(game=game,
                                     best_move_valuation=values_dict[best_move],
                                     best_move=best_move)
         return best_move
