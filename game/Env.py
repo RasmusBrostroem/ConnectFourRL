@@ -3,6 +3,7 @@ import pygame as pg
 import random
 import sys
 from types import SimpleNamespace
+from copy import deepcopy
 
 class Env():
     def __init__(self, player1, player2, **kwargs) -> None:
@@ -180,22 +181,26 @@ class Env():
             self.change_player()
 
     def self_play(self) -> None:
+        # NOTE: Does not support illegal moves
         self.reset()
-        # Assume that the self-playing agent is always player1
-        self.currentPlayer = self.player1
 
+        # Assume that the self-playing agent is always self.player1 and
+        # uses parameters from the start of the game throughout 
+        self.player2 = deepcopy(self.player1)
+        self.player2.is_training = False
+        self.player2.playerPiece *= -1
+
+        self.currentPlayer = random.choice([self.player1, self.player2])
         while True:
             self.check_user_events()
             if self.display_game:
                 self.render()
 
             done = self.step()
-
             if done:
                 self.player1.update_stats()
                 if self.display_game:
                     self.render(delay=self.params.win_screen_delay)
                 break
-
-            self.player1.playerPiece *= -1
+            self.change_player()
 
