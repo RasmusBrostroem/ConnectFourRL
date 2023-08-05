@@ -811,7 +811,7 @@ class TDAgent(DirectPolicyAgent):
         game.remove_piece(column=best_move)
 
         # reset gradient
-        self
+        self.zero_grad()
         # update each part of weights
         v_hat = self.forward(x=self.represent_binary(
             game_state=game.return_board)
