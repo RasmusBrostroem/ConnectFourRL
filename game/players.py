@@ -754,8 +754,10 @@ class TDAgent(DirectPolicyAgent):
         #     binary_game_state.append(1)
 
         flattened_board = torch.from_numpy(game_state).float().flatten()
-        opponent_positions = [1 if p == self.playerPiece*-1 else 0 for p in flattened_board]
-        own_positions = [1 if p == self.playerPiece else 0 for p in flattened_board]
+        opponent_positions = [1 if p == self.playerPiece*-1 else 0
+                              for p in flattened_board]
+        own_positions = [1 if p == self.playerPiece else 0
+                         for p in flattened_board]
         binary_game_state = opponent_positions + own_positions
         binary_game_state = torch.FloatTensor(binary_game_state)
         return binary_game_state
@@ -779,7 +781,6 @@ class TDAgent(DirectPolicyAgent):
         legal_moves = game.legal_cols()
         for move in legal_moves:
             game.place_piece(column=move, piece=self.playerPiece)
-            # NOTE: agent does not need to know if it wins or ties, only place
             next_board = game.return_board()
             binary_rep = self.represent_binary(next_board)
             with torch.no_grad():
@@ -803,16 +804,18 @@ class TDAgent(DirectPolicyAgent):
                            game: connect_four,
                            best_move_valuation: float,
                            best_move: int) -> None:
-        
+
         game.place_piece(column=best_move,
                          piece=self.playerPiece)
         reward = self.params["win_reward"] if game.winning_move() else 0
         game.remove_piece(column=best_move)
-        
+
         # reset gradient
         self
         # update each part of weights
-        v_hat = self.forward(x=self.represent_binary(game_state=game.return_board))
+        v_hat = self.forward(x=self.represent_binary(
+            game_state=game.return_board)
+            )
         v_hat.backward()
         with torch.no_grad():
             for name, param in self.named_parameters:
@@ -823,6 +826,6 @@ class TDAgent(DirectPolicyAgent):
                 # multiply with new evidence
                 w_change = self.alpha * \
                     (reward + self.gamma*best_move_valuation - v_hat)\
-                    * self.eligibility_dict[name]    
+                    * self.eligibility_dict[name]
                 # adding to weights
                 param += w_change
