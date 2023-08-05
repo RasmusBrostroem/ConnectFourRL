@@ -813,11 +813,11 @@ class TDAgent(DirectPolicyAgent):
         self.zero_grad()
         # update each part of weights
         v_hat = self.forward(x=self.represent_binary(
-            game_state=game.return_board)
+            game_state=game.return_board())
             )
         v_hat.backward()
         with torch.no_grad():
-            for name, param in self.named_parameters:
+            for name, param in self.named_parameters():
                 # update eligibility trace
                 self.eligibility_dict[name] = \
                     self.gamma * self.Lambda * self.eligibility_dict[name]\
