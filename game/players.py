@@ -733,13 +733,17 @@ class TDAgent(DirectPolicyAgent):
         return F.sigmoid(x)
 
     def represent_binary(self, game_state):
-        """_summary_
+        """Create binary 84-node representation of game state, opponent on top
 
         Args:
-            game_state (_type_): _description_
+            game_state (np.ndarray): A game state in matrix representation as
+                provided by connect_four.return_board().
 
         Returns:
-            _type_: _description_
+            torch.FloatTensor: Flattened tensor with 84 entries. The first 42
+                are 1 if the corresponding spot in the flattened game state is
+                occupied by the opponent, 0 otherwise. The following 42 are
+                1 if occupied by player itself.
         """
         # NOTE: alternative approach (requires 2 extra nodes in self.L1)
         # p1_positions = [1 if p == 1 else 0 for p in x]
@@ -769,13 +773,19 @@ class TDAgent(DirectPolicyAgent):
     def select_action(self,
                       game: connect_four,
                       illegal_moves_allowed: bool = False):
-        """
+        """Find the move with best value estimation and update if training.
+
+        Uses the fully incremental implementation as discussed in the section
+        about Tesauro's TD-Backgammon in Sutton and Barto's RL-book, 2nd
+        edition.
+
         Args:
-            board (np.ndarray): _description_
-            illegal_moves_allowed (list, optional): UNUSED.
+            game (connectFour.connect_four): 
+            illegal_moves_allowed (bool, optional): UNUSED, as illegal moves
+                aren't supported for the TDAgent.
 
         Returns:
-            _type_: _description_
+            int: The index of the selected  column.
         """
         values_dict = {}  # Initialise dictionary of move:v_hat pairs
         legal_moves = game.legal_cols()
@@ -803,7 +813,13 @@ class TDAgent(DirectPolicyAgent):
                            game: connect_four,
                            best_move_valuation: float,
                            best_move: int) -> None:
+        """Update network with the fully incremental update rule.
 
+        Args:
+            game (connect_four): Game object of the current game.
+            best_move_valuation (float): Value estimate of the chosen move.
+            best_move (int): Column index of the chosen move.
+        """
         game.place_piece(column=best_move,
                          piece=self.playerPiece)
         reward = self.params["win_reward"] if game.winning_move() else 0
