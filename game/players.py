@@ -610,7 +610,7 @@ class HumanPlayer(Player):
                     if selected_col in game.legal_cols():
                         return selected_col
                     else:
-                        print("Du har valgt en ugyldt colonne. PRØV IGEN!")
+                        print("You have chosen an illegal column. TRY AGAIN!")
 
 
 class MinimaxAgent(Player):
