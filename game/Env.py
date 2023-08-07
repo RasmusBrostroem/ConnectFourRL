@@ -210,3 +210,15 @@ class Env():
                 break
             self.change_player()
 
+    def benchmark(self, opponent, n_games, neptune_project_id) -> None:
+        # TODO: How should it be indicated which player to benchmark?
+        # set in eval mode
+
+        # play n_games against opponent
+
+        # log (or, if no neptune_project_id provided, print results)
+        # clean-up
+        # if no neptune_project_id, reset stats (else done in log_benchmark)
+        # delete rewards and log probs
+        # reset to train mode
+        pass
