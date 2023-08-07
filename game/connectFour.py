@@ -10,6 +10,7 @@ class connect_four():
         self.columns = _columns
 
         self.board = np.zeros((self.rows,self.columns))
+        self.screen = None
 
     def draw_board(self):
         '''
@@ -22,7 +23,8 @@ class connect_four():
 
         square_size = min(np.ceil(self.size/self.columns),np.ceil(self.size/self.rows))
         
-        screen = pg.display.set_mode((square_size * self.columns, square_size * (self.rows+1)))
+        if not self.screen:
+            self.screen = pg.display.set_mode((square_size * self.columns, square_size * (self.rows+1)))
 
         radius = int(square_size/2-5)
         flipped_board = np.flip(self.board,0)
@@ -30,15 +32,15 @@ class connect_four():
         # Draw the squares and pieces
         for r in range(self.rows):
             for c in range(self.columns):
-                pg.draw.rect(screen, blue, (c*square_size, r*square_size+square_size, square_size, square_size))
+                pg.draw.rect(self.screen, blue, (c*square_size, r*square_size+square_size, square_size, square_size))
                 circle_x_center = int(c*square_size+square_size/2)
                 circle_y_center = int(r*square_size+square_size/2+square_size)
                 if flipped_board[r][c] == 0:
-                    pg.draw.circle(screen, black, (circle_x_center, circle_y_center), radius)
+                    pg.draw.circle(self.screen, black, (circle_x_center, circle_y_center), radius)
                 elif flipped_board[r][c] == 1:
-                    pg.draw.circle(screen, yellow, (circle_x_center, circle_y_center), radius)
+                    pg.draw.circle(self.screen, yellow, (circle_x_center, circle_y_center), radius)
                 else:
-                    pg.draw.circle(screen, red, (circle_x_center, circle_y_center), radius)
+                    pg.draw.circle(self.screen, red, (circle_x_center, circle_y_center), radius)
         
         # Draw the result if there is one
         # if self.winning_move():
@@ -60,6 +62,43 @@ class connect_four():
         #     label = myfont.render(text, 1, red)
         #     screen.blit(label, (self.size/2-label.get_width()/2,square_size/2-label.get_height()/2))
 
+        pg.display.update()
+
+    def draw_translucent_piece(self, column, player_piece) -> None:
+        '''
+        Draw a translucent piece in the specified column.
+        '''
+        red = (255, 0, 0, 128)
+        yellow = (255,255,0, 128)
+        square_size = min(np.ceil(self.size / self.columns), np.ceil(self.size / self.rows))
+        radius = int(square_size / 2 - 5)
+
+        for i, row in enumerate(self.board):
+            if row[column] == 0:
+                circle_y_center = int((self.rows-i)*square_size+square_size/2)
+                break
+                
+        circle_x_center = int(column * square_size + square_size / 2)
+        translucent_surface = pg.Surface((radius * 2, radius * 2), pg.SRCALPHA)
+        if player_piece == 1:
+            pg.draw.circle(translucent_surface, yellow, (radius, radius), radius)
+            #pg.draw.circle(self.screen, yellow, (circle_x_center, circle_y_center), radius)
+        else:
+            pg.draw.circle(translucent_surface, red, (radius, radius), radius)
+            #pg.draw.circle(self.screen, translucent_red, (circle_x_center, circle_y_center), radius)'
+        self.screen.blit(translucent_surface, (circle_x_center - radius, circle_y_center - radius))
+        pg.display.update()
+     
+    def remove_translucent_piece(self, column) -> None:
+        square_size = min(np.ceil(self.size / self.columns), np.ceil(self.size / self.rows))
+        radius = int(square_size / 2 - 5)
+        for i, row in enumerate(self.board):
+            if row[column] == 0:
+                circle_y_center = int((self.rows-i)*square_size+square_size/2)
+                break
+                
+        circle_x_center = int(column * square_size + square_size / 2)
+        pg.draw.circle(self.screen, (0,0,0), (circle_x_center, circle_y_center), radius)
         pg.display.update()
     
     def close_board(self) -> None:
