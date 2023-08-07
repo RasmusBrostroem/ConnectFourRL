@@ -210,15 +210,44 @@ class Env():
                 break
             self.change_player()
 
-    def benchmark(self, opponent, n_games, neptune_project_id) -> None:
-        # TODO: How should it be indicated which player to benchmark?
+    def benchmark(self,
+                  benchmark_player,
+                  opponent,
+                  n_games,
+                  neptune_run=None) -> None:
+        # WARNING: Make sure that benchmarking is not done in between updates
         # set in eval mode
-
+        benchmark_player.eval()
+        opponent.eval()
         # play n_games against opponent
+        bench_env = Env(player1=benchmark_player, player2=opponent)
+
+        for i in range(n_games):
+            bench_env.play_game()
 
         # log (or, if no neptune_project_id provided, print results)
+        if neptune_run:
+            benchmark_player.log_benchmark(
+                neptune_run=neptune_run,
+                opponent_name=opponent.__class__.__name__)
+        else:
+            print(
+                f"Results of benchmark against {opponent.__class__.__name__}"
+                )
+            wins = benchmark_player.benchmark_stats["wins"]
+            games = benchmark_player.benchmark_stats["games"]
+            print(f"Win-rate: {wins/games*100} % (in {games} games).")
+            # if no neptune_run, reset stats (else done in log_benchmark)
+            benchmark_player.benchmark_stats = dict.fromkeys(
+                benchmark_player.benchmark_stats, 0
+                )
+
         # clean-up
-        # if no neptune_project_id, reset stats (else done in log_benchmark)
         # delete rewards and log probs
+        # NOTE: this results in issues for some updating rules, if
+        # benchmarking is performed between updates
+        del benchmark_player.rewards[:]
+        del benchmark_player.saved_log_probs[:]
         # reset to train mode
-        pass
+        benchmark_player.train()
+        opponent.train()
