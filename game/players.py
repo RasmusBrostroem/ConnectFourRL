@@ -778,13 +778,16 @@ class TDAgent(DirectPolicyAgent):
 
         # creating eligibility traces
         self.eligibility_dict = {}
-        for name, param in self.named_parameters():
-            self.eligibility_dict[name] = torch.zeros(param.shape)
+        self.zero_eligibility()
 
         # hyperparameters for update rule
         self.gamma = 0.9
         self.Lambda = 1
         self.alpha = 0.1
+
+    def zero_eligibility(self):
+        for name, param in self.named_parameters():
+            self.eligibility_dict[name] = torch.zeros(param.shape)
 
     def forward(self, x):
         """Pass a game state through the network to estimate its value.
@@ -913,3 +916,6 @@ class TDAgent(DirectPolicyAgent):
                     * self.eligibility_dict[name]
                 # adding to weights
                 param += w_change
+
+        if reward == self.params["win_reward"]:
+            self.zero_eligibility()
