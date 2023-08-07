@@ -82,10 +82,8 @@ class connect_four():
         translucent_surface = pg.Surface((radius * 2, radius * 2), pg.SRCALPHA)
         if player_piece == 1:
             pg.draw.circle(translucent_surface, yellow, (radius, radius), radius)
-            #pg.draw.circle(self.screen, yellow, (circle_x_center, circle_y_center), radius)
         else:
             pg.draw.circle(translucent_surface, red, (radius, radius), radius)
-            #pg.draw.circle(self.screen, translucent_red, (circle_x_center, circle_y_center), radius)'
         self.screen.blit(translucent_surface, (circle_x_center - radius, circle_y_center - radius))
         pg.display.update()
      
