@@ -1,4 +1,4 @@
-from game.players import DirectPolicyAgent, Player, MinimaxAgent, TDAgent
+from game.players import DirectPolicyAgent, Player, MinimaxAgent, TDAgent, HumanPlayer
 from game.Env import Env
 from game.connectFour import connect_four
 from torch.distributions import Categorical
@@ -27,22 +27,24 @@ from time import sleep
 # optimizerPL2 = optim.RMSprop(player2.parameters(), lr=0.1, weight_decay=0.95)
 
 
-player1 = TDAgent(player_piece=1)
-player1.load_network_weights("learned_weights/player1_selftrain.pt")
-player1.is_training = False
-player2 = TDAgent(player_piece=-1)
-player2.load_network_weights("learned_weights/player1_selftrain_11k.pt")
-player2.is_training = False
+# player1 = TDAgent(player_piece=1)
+# player1.load_network_weights("learned_weights/player1_selftrain.pt")
+# player1.is_training = False
+# player2 = TDAgent(player_piece=-1)
+# player2.load_network_weights("learned_weights/player1_selftrain_11k.pt")
+# player2.is_training = False
+player1 = HumanPlayer(player_piece=1)
+player2 = HumanPlayer(player_piece=-1)
 #player2 = MinimaxAgent(player_piece=-1)
 #player2 = Player(player_piece=-1)
 environment = Env(player1, player2, allow_illegal_moves=False)
 
-for i in range(1, 101):
+for i in range(1, 2):
     #environment.self_play()
     environment.play_game()
-    wins = player1.stats["wins"]
-    games = player1.stats["games"]
-    print(f"Winrate, TDtraining against  : {wins}/{games}({wins/games})")
+    #wins = player1.stats["wins"]
+    #games = player1.stats["games"]
+    #print(f"Winrate, TDtraining against  : {wins}/{games}({wins/games})")
     # if i % 20 == 0:
     #     player2.update_agent(optimizer=optimizerPL2)
     #     player1.update_agent()
