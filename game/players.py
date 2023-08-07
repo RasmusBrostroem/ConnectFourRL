@@ -300,16 +300,15 @@ class Player():
         # NOTE: should be called after each separate benchmarking game
         final_reward = self.rewards[-1]
 
-        self.stats["games"] += 1
-        self.total_games += 1
+        self.benchmark_stats["games"] += 1
         if final_reward == self.params["loss_reward"]:
-            self.stats["losses"] += 1
+            self.benchmark_stats["losses"] += 1
         elif final_reward == self.params["win_reward"]:
-            self.stats["wins"] += 1
+            self.benchmark_stats["wins"] += 1
         elif final_reward == self.params["tie_reward"]:
-            self.stats["ties"] += 1
+            self.benchmark_stats["ties"] += 1
         elif final_reward == self.params["illegal_reward"]:
-            self.stats["illegals"] += 1
+            self.benchmark_stats["illegals"] += 1
 
     def log_benchmark(self, neptune_run: neptune.Run, opponent_name: str):
         # NOTE: assumes all games in self.benchmark_stats were played against
