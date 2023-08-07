@@ -106,6 +106,7 @@ class Player():
                 calculating rewards.
             device (str, default="cpu"): The device on which to perform
                 computations, e.g. "cpu" or "cuda".
+            training (bool, default=True): The training mode of the object.
         """
         self.params = {
             "win_reward": 1,
@@ -114,7 +115,8 @@ class Player():
             "illegal_reward": -5,
             "not_ended_reward": 0,
             "gamma": 0.8,
-            "device": "cpu"
+            "device": "cpu",
+            "training": True
         }
         self.params.update(kwargs)
 
@@ -142,6 +144,7 @@ class Player():
         self.saved_log_probs = []
         self.rewards = []
         self.gamma = self.params["gamma"]
+        self.training = self.params["training"]
 
     def select_action(self,
                       game: connect_four,
@@ -283,6 +286,31 @@ class Player():
             pass
 
         self.stats = dict.fromkeys(self.stats, 0)  # Sets all values back to 0
+
+    def train(self, mode: bool = True):
+        """Configure the training mode of the player.
+
+        Warning: Agents using pytorch should inherit this method from
+        nn.Module instead of Player.
+        Args:
+            mode (bool, optional): whether to set training mode (True) or
+                evaluation mode (False). Defaults to True.
+
+        Returns:
+            self
+        """
+        self.training = mode
+        return self
+
+    def eval(self):
+        """Set agent to evaluation (not training).
+
+        Warning: Agents using pytorch should inherit this method from
+        nn.Module instead of Player.
+        Returns:
+            self
+        """
+        return self.train(mode=False)
 
 
 class DirectPolicyAgent(nn.Module, Player):
@@ -698,7 +726,7 @@ class TDAgent(DirectPolicyAgent):
 
     Adds the following methods:
     """
-    def __init__(self, train=True, **kwargs):
+    def __init__(self, **kwargs):
         """Construct TDAgent object.
 
         Does not call the init of DirectPolicyAgent to avoid copying its
@@ -708,11 +736,13 @@ class TDAgent(DirectPolicyAgent):
         nn.Module.__init__(self)
         self.L1 = nn.Linear(84, 50)
         self.L2 = nn.Linear(50, 1)
-        self.is_training = train
+
         # creating eligibility traces
         self.eligibility_dict = {}
         for name, param in self.named_parameters():
             self.eligibility_dict[name] = torch.zeros(param.shape)
+
+        # hyperparameters for update rule
         self.gamma = 0.9
         self.Lambda = 1
         self.alpha = 0.1
@@ -780,7 +810,7 @@ class TDAgent(DirectPolicyAgent):
         edition.
 
         Args:
-            game (connectFour.connect_four): 
+            game (connectFour.connect_four): Instance of the game in play.
             illegal_moves_allowed (bool, optional): UNUSED, as illegal moves
                 aren't supported for the TDAgent.
 
@@ -799,7 +829,7 @@ class TDAgent(DirectPolicyAgent):
             game.remove_piece(column=move)
 
         best_move = max(values_dict, key=values_dict.get)
-        if self.is_training:
+        if self.training:
             self.incremental_update(game=game,
                                     best_move_valuation=values_dict[best_move],
                                     best_move=best_move)

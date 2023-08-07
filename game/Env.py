@@ -187,7 +187,7 @@ class Env():
         # Assume that the self-playing agent is always self.player1 and
         # uses parameters from the start of the game throughout 
         self.player2 = deepcopy(self.player1)
-        self.player2.is_training = False
+        self.player2.eval()
         self.player2.playerPiece *= -1
 
         self.currentPlayer = random.choice([self.player1, self.player2])

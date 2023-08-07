@@ -29,22 +29,28 @@ from time import sleep
 
 player1 = TDAgent(player_piece=1)
 player1.load_network_weights("learned_weights/player1_selftrain.pt")
-player1.is_training = False
+player1.eval()
 player2 = TDAgent(player_piece=-1)
-player2.load_network_weights("learned_weights/player1_selftrain_11k.pt")
-player2.is_training = False
+player2.load_network_weights("learned_weights/player1_selftrain.pt")
+player2.eval()
+for p1p,p2p in zip(player1.parameters(), player2.parameters()):
+    print(p1p == p2p)
+
 #player2 = MinimaxAgent(player_piece=-1)
 #player2 = Player(player_piece=-1)
 environment = Env(player1, player2, allow_illegal_moves=False)
 
-for i in range(1, 101):
+for i in range(1, 10):
     #environment.self_play()
     environment.play_game()
-    wins = player1.stats["wins"]
-    games = player1.stats["games"]
-    print(f"Winrate, TDtraining against  : {wins}/{games}({wins/games})")
+    # wins = player1.stats["wins"]
+    # games = player1.stats["games"]
+    # print(f"Winrate, TDtraining against  : {wins}/{games}({wins/games})")
     # if i % 20 == 0:
     #     player2.update_agent(optimizer=optimizerPL2)
     #     player1.update_agent()
     #     player1.log_stats(neptune_run=run)
     #     player2.log_stats(neptune_run=run)
+print("played")
+for p1p,p2p in zip(player1.parameters(), player2.parameters()):
+    print(p1p == p2p)
