@@ -220,7 +220,9 @@ class Env():
         benchmark_player.eval()
         opponent.eval()
         # play n_games against opponent
-        bench_env = Env(player1=benchmark_player, player2=opponent)
+        bench_env = Env(player1=benchmark_player,
+                        player2=opponent,
+                        display_game=False)
 
         for i in range(n_games):
             bench_env.play_game()
