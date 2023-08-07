@@ -30,6 +30,7 @@ from os import path, mkdir
 import json
 import git
 from game.connectFour import connect_four
+import pygame as pg
 
 
 class Player():
@@ -572,13 +573,44 @@ class HumanPlayer(Player):
             int: The column to place the piece in, 0-indexed.
         """
         # Calculating legal_cols since legal_moves may be an empty list
-        chosen_col = int(input("Choose column: ")) - 1
-        while chosen_col not in game.legal_cols():
-            # 1-indexed
-            printable_legals = [col+1 for col in game.legal_cols()]
-            print(f"Illegal column. Choose between {printable_legals}.")
-            chosen_col = int(input("Choose column: ")) - 1
+        # chosen_col = int(input("Choose column: ")) - 1
+        # while chosen_col not in game.legal_cols():
+        #     # 1-indexed
+        #     printable_legals = [col+1 for col in game.legal_cols()]
+        #     print(f"Illegal column. Choose between {printable_legals}.")
+        #     chosen_col = int(input("Choose column: ")) - 1
+        chosen_col = self.get_mouse_input(game=game)
         return chosen_col
+    
+    def get_mouse_input(self, game: connect_four):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
+        hovered_col = None
+        while True:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    pg.quit()
+                    return -1
+                if event.type == pg.MOUSEMOTION:
+                    mouse_x = event.pos[0]
+                    new_hovered_col = mouse_x // int(game.size / game.columns)
+                    if new_hovered_col != hovered_col:
+                        if hovered_col is not None:
+                            game.remove_translucent_piece(column=hovered_col)
+                            hovered_col = None
+                        if game.is_legal(column=new_hovered_col):
+                            game.draw_translucent_piece(column=new_hovered_col, player_piece=self.playerPiece)
+                            hovered_col = new_hovered_col
+                if event.type == pg.MOUSEBUTTONDOWN:
+                    mouse_x = event.pos[0]
+                    selected_col = mouse_x // int(game.size / game.columns)
+                    if selected_col in game.legal_cols():
+                        return selected_col
+                    else:
+                        print("Du har valgt en ugyldt colonne. PRØV IGEN!")
 
 
 class MinimaxAgent(Player):
