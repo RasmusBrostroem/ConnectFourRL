@@ -172,8 +172,14 @@ class Env():
             if done:
                 self.player1.calculate_rewards()
                 self.player2.calculate_rewards()
-                self.player1.update_stats()
-                self.player2.update_stats()
+                if self.player1.training:
+                    self.player1.update_stats()
+                else:
+                    self.player1.update_benchmark_stats()
+                if self.player2.training:
+                    self.player2.update_stats()
+                else:
+                    self.player2.update_benchmark_stats()
                 if self.display_game:
                     self.render(delay=self.params.win_screen_delay)
                 break
