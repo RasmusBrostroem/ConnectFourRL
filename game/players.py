@@ -140,6 +140,15 @@ class Player():
         self.total_games = 0
         self.probs = []
 
+        # Attributes used for benchmarking
+        self.benchmark_stats = {
+            "wins": 0,
+            "losses": 0,
+            "ties": 0,
+            "illegals": 0,
+            "games": 0
+        }
+
         # Parameters used for updating agent
         self.saved_log_probs = []
         self.rewards = []
@@ -286,6 +295,37 @@ class Player():
             pass
 
         self.stats = dict.fromkeys(self.stats, 0)  # Sets all values back to 0
+
+    def update_benchmark_stats(self):
+        # NOTE: should be called after each separate benchmarking game
+        final_reward = self.rewards[-1]
+
+        self.stats["games"] += 1
+        self.total_games += 1
+        if final_reward == self.params["loss_reward"]:
+            self.stats["losses"] += 1
+        elif final_reward == self.params["win_reward"]:
+            self.stats["wins"] += 1
+        elif final_reward == self.params["tie_reward"]:
+            self.stats["ties"] += 1
+        elif final_reward == self.params["illegal_reward"]:
+            self.stats["illegals"] += 1
+
+    def log_benchmark(self, neptune_run: neptune.Run, opponent_name: str):
+        # NOTE: assumes all games in self.benchmark_stats were played against
+        # opponent_name
+        folder_name = f"player{self.playerPiece}/benchmarks"
+        neptune_run[folder_name + "/winrate_" + opponent_name].log(
+            self.benchmark_stats["wins"]/self.benchmark_stats["games"])
+        neptune_run[folder_name + "/lossrate_" + opponent_name].log(
+            self.benchmark_stats["losses"]/self.benchmark_stats["games"])
+        neptune_run[folder_name + "/tierate_" + opponent_name].log(
+            self.benchmark_stats["ties"]/self.benchmark_stats["games"])
+        neptune_run[folder_name + "/illegalrate_" + opponent_name].log(
+            self.benchmark_stats["illegals"]/self.benchmark_stats["games"])
+
+        # Sets all values back to 0
+        self.benchmark_stats = dict.fromkeys(self.benchmark_stats, 0)
 
     def train(self, mode: bool = True):
         """Configure the training mode of the player.
