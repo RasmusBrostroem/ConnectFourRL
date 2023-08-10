@@ -69,36 +69,45 @@ class connect_four():
         Draw a translucent piece in the specified column.
         '''
         red = (255, 0, 0, 128)
-        yellow = (255,255,0, 128)
-        square_size = min(np.ceil(self.size / self.columns), np.ceil(self.size / self.rows))
+        yellow = (255, 255, 0, 128)
+        square_size = min(np.ceil(self.size / self.columns),
+                          np.ceil(self.size / self.rows))
         radius = int(square_size / 2 - 5)
 
         for i, row in enumerate(self.board):
             if row[column] == 0:
                 circle_y_center = int((self.rows-i)*square_size+square_size/2)
                 break
-                
+
         circle_x_center = int(column * square_size + square_size / 2)
         translucent_surface = pg.Surface((radius * 2, radius * 2), pg.SRCALPHA)
         if player_piece == 1:
-            pg.draw.circle(translucent_surface, yellow, (radius, radius), radius)
+            pg.draw.circle(translucent_surface,
+                           yellow,
+                           (radius, radius),
+                           radius)
         else:
             pg.draw.circle(translucent_surface, red, (radius, radius), radius)
-        self.screen.blit(translucent_surface, (circle_x_center - radius, circle_y_center - radius))
+        self.screen.blit(translucent_surface,
+                         (circle_x_center - radius, circle_y_center - radius))
         pg.display.update()
-     
+
     def remove_translucent_piece(self, column) -> None:
-        square_size = min(np.ceil(self.size / self.columns), np.ceil(self.size / self.rows))
+        square_size = min(np.ceil(self.size / self.columns),
+                          np.ceil(self.size / self.rows))
         radius = int(square_size / 2 - 5)
         for i, row in enumerate(self.board):
             if row[column] == 0:
                 circle_y_center = int((self.rows-i)*square_size+square_size/2)
                 break
-                
+
         circle_x_center = int(column * square_size + square_size / 2)
-        pg.draw.circle(self.screen, (0,0,0), (circle_x_center, circle_y_center), radius)
+        pg.draw.circle(self.screen,
+                       (0, 0, 0),
+                       (circle_x_center, circle_y_center),
+                       radius)
         pg.display.update()
-    
+
     def close_board(self) -> None:
         pg.display.quit()
 

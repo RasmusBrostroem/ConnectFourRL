@@ -602,7 +602,9 @@ class HumanPlayer(Player):
                             game.remove_translucent_piece(column=hovered_col)
                             hovered_col = None
                         if game.is_legal(column=new_hovered_col):
-                            game.draw_translucent_piece(column=new_hovered_col, player_piece=self.playerPiece)
+                            game.draw_translucent_piece(
+                                column=new_hovered_col,
+                                player_piece=self.playerPiece)
                             hovered_col = new_hovered_col
                 if event.type == pg.MOUSEBUTTONDOWN:
                     mouse_x = event.pos[0]
