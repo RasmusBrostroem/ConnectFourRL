@@ -552,14 +552,19 @@ class DirectPolicyAgent_mini(DirectPolicyAgent):
 
 
 class HumanPlayer(Player):
-    """Extends Player() to let the user play the game using console input."""
+    """Extends Player() to let the user play the game using mouse input.
+
+    Note that this class is not safe for use in training or benchmarking
+    scripts, as input to hide or quit the game will often result in a crash
+    of the Python instance.
+    """
     def __init__(self, **kwargs):
         """Create new HumanPlayer object. See Player() docs for kwargs."""
         Player.__init__(self, **kwargs)
 
     def select_action(self,
                       game: connect_four,
-                      illegal_moves_allowed: bool = True) -> int:
+                      illegal_moves_allowed: bool = False) -> int:
         """Ask for user input to choose a column.
 
         Args:
@@ -568,6 +573,8 @@ class HumanPlayer(Player):
                 or not illegal moves are allowed. Defaults to True.
                 This argument is not used by the method, but is included
                 since every select_action method needs to have the argument.
+                The default value aligns with the implementation of
+                get_mouse_input(), which does not allow illegal moves.
 
         Returns:
             int: The column to place the piece in, 0-indexed.
@@ -581,12 +588,12 @@ class HumanPlayer(Player):
         #     chosen_col = int(input("Choose column: ")) - 1
         chosen_col = self.get_mouse_input(game=game)
         return chosen_col
-    
+
     def get_mouse_input(self, game: connect_four):
-        """_summary_
+        """Track mouse movement and left button to get user's chosen column.
 
         Returns:
-            _type_: _description_
+            int: Column clicked by the user or -1 if quitting.
         """
         hovered_col = None
         while True:
