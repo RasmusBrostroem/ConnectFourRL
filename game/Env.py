@@ -172,8 +172,14 @@ class Env():
             if done:
                 self.player1.calculate_rewards()
                 self.player2.calculate_rewards()
-                self.player1.update_stats()
-                self.player2.update_stats()
+                if self.player1.training:
+                    self.player1.update_stats()
+                else:
+                    self.player1.update_benchmark_stats()
+                if self.player2.training:
+                    self.player2.update_stats()
+                else:
+                    self.player2.update_benchmark_stats()
                 if self.display_game:
                     self.render(delay=self.params.win_screen_delay)
                 break
@@ -187,7 +193,7 @@ class Env():
         # Assume that the self-playing agent is always self.player1 and
         # uses parameters from the start of the game throughout 
         self.player2 = deepcopy(self.player1)
-        self.player2.is_training = False
+        self.player2.eval()
         self.player2.playerPiece *= -1
 
         self.currentPlayer = random.choice([self.player1, self.player2])
@@ -204,3 +210,46 @@ class Env():
                 break
             self.change_player()
 
+    def benchmark(self,
+                  benchmark_player,
+                  opponent,
+                  n_games,
+                  neptune_run=None) -> None:
+        # WARNING: Make sure that benchmarking is not done in between updates
+        # set in eval mode
+        benchmark_player.eval()
+        opponent.eval()
+        # play n_games against opponent
+        bench_env = Env(player1=benchmark_player,
+                        player2=opponent,
+                        display_game=False)
+
+        for i in range(n_games):
+            bench_env.play_game()
+
+        # log (or, if no neptune_project_id provided, print results)
+        if neptune_run:
+            benchmark_player.log_benchmark(
+                neptune_run=neptune_run,
+                opponent_name=opponent.__class__.__name__)
+        else:
+            print(
+                f"Results of benchmark against {opponent.__class__.__name__}"
+                )
+            wins = benchmark_player.benchmark_stats["wins"]
+            games = benchmark_player.benchmark_stats["games"]
+            print(f"Win-rate: {wins/games*100} % (in {games} games).")
+            # if no neptune_run, reset stats (else done in log_benchmark)
+            benchmark_player.benchmark_stats = dict.fromkeys(
+                benchmark_player.benchmark_stats, 0
+                )
+
+        # clean-up
+        # delete rewards and log probs
+        # NOTE: this results in issues for some updating rules, if
+        # benchmarking is performed between updates
+        del benchmark_player.rewards[:]
+        del benchmark_player.saved_log_probs[:]
+        # reset to train mode
+        benchmark_player.train()
+        opponent.train()

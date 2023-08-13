@@ -50,3 +50,4 @@ for i in range(1, 2):
     #     player1.update_agent()
     #     player1.log_stats(neptune_run=run)
     #     player2.log_stats(neptune_run=run)
+print("played")

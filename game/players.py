@@ -107,6 +107,7 @@ class Player():
                 calculating rewards.
             device (str, default="cpu"): The device on which to perform
                 computations, e.g. "cpu" or "cuda".
+            training (bool, default=True): The training mode of the object.
         """
         self.params = {
             "win_reward": 1,
@@ -115,7 +116,8 @@ class Player():
             "illegal_reward": -5,
             "not_ended_reward": 0,
             "gamma": 0.8,
-            "device": "cpu"
+            "device": "cpu",
+            "training": True
         }
         self.params.update(kwargs)
 
@@ -139,10 +141,20 @@ class Player():
         self.total_games = 0
         self.probs = []
 
+        # Attributes used for benchmarking
+        self.benchmark_stats = {
+            "wins": 0,
+            "losses": 0,
+            "ties": 0,
+            "illegals": 0,
+            "games": 0
+        }
+
         # Parameters used for updating agent
         self.saved_log_probs = []
         self.rewards = []
         self.gamma = self.params["gamma"]
+        self.training = self.params["training"]
 
     def select_action(self,
                       game: connect_four,
@@ -284,6 +296,61 @@ class Player():
             pass
 
         self.stats = dict.fromkeys(self.stats, 0)  # Sets all values back to 0
+
+    def update_benchmark_stats(self):
+        # NOTE: should be called after each separate benchmarking game
+        final_reward = self.rewards[-1]
+
+        self.benchmark_stats["games"] += 1
+        if final_reward == self.params["loss_reward"]:
+            self.benchmark_stats["losses"] += 1
+        elif final_reward == self.params["win_reward"]:
+            self.benchmark_stats["wins"] += 1
+        elif final_reward == self.params["tie_reward"]:
+            self.benchmark_stats["ties"] += 1
+        elif final_reward == self.params["illegal_reward"]:
+            self.benchmark_stats["illegals"] += 1
+
+    def log_benchmark(self, neptune_run: neptune.Run, opponent_name: str):
+        # NOTE: assumes all games in self.benchmark_stats were played against
+        # opponent_name
+        folder_name = f"player{self.playerPiece}/benchmarks"
+        neptune_run[folder_name + "/winrate_" + opponent_name].log(
+            self.benchmark_stats["wins"]/self.benchmark_stats["games"])
+        neptune_run[folder_name + "/lossrate_" + opponent_name].log(
+            self.benchmark_stats["losses"]/self.benchmark_stats["games"])
+        neptune_run[folder_name + "/tierate_" + opponent_name].log(
+            self.benchmark_stats["ties"]/self.benchmark_stats["games"])
+        neptune_run[folder_name + "/illegalrate_" + opponent_name].log(
+            self.benchmark_stats["illegals"]/self.benchmark_stats["games"])
+
+        # Sets all values back to 0
+        self.benchmark_stats = dict.fromkeys(self.benchmark_stats, 0)
+
+    def train(self, mode: bool = True):
+        """Configure the training mode of the player.
+
+        Warning: Agents using pytorch should inherit this method from
+        nn.Module instead of Player.
+        Args:
+            mode (bool, optional): whether to set training mode (True) or
+                evaluation mode (False). Defaults to True.
+
+        Returns:
+            self
+        """
+        self.training = mode
+        return self
+
+    def eval(self):
+        """Set agent to evaluation (not training).
+
+        Warning: Agents using pytorch should inherit this method from
+        nn.Module instead of Player.
+        Returns:
+            self
+        """
+        return self.train(mode=False)
 
 
 class DirectPolicyAgent(nn.Module, Player):
@@ -739,7 +806,7 @@ class TDAgent(DirectPolicyAgent):
 
     Adds the following methods:
     """
-    def __init__(self, train=True, **kwargs):
+    def __init__(self, **kwargs):
         """Construct TDAgent object.
 
         Does not call the init of DirectPolicyAgent to avoid copying its
@@ -749,14 +816,19 @@ class TDAgent(DirectPolicyAgent):
         nn.Module.__init__(self)
         self.L1 = nn.Linear(84, 50)
         self.L2 = nn.Linear(50, 1)
-        self.is_training = train
+
         # creating eligibility traces
         self.eligibility_dict = {}
-        for name, param in self.named_parameters():
-            self.eligibility_dict[name] = torch.zeros(param.shape)
+        self.zero_eligibility()
+
+        # hyperparameters for update rule
         self.gamma = 0.9
         self.Lambda = 1
         self.alpha = 0.1
+
+    def zero_eligibility(self):
+        for name, param in self.named_parameters():
+            self.eligibility_dict[name] = torch.zeros(param.shape)
 
     def forward(self, x):
         """Pass a game state through the network to estimate its value.
@@ -821,7 +893,7 @@ class TDAgent(DirectPolicyAgent):
         edition.
 
         Args:
-            game (connectFour.connect_four): 
+            game (connectFour.connect_four): Instance of the game in play.
             illegal_moves_allowed (bool, optional): UNUSED, as illegal moves
                 aren't supported for the TDAgent.
 
@@ -840,7 +912,7 @@ class TDAgent(DirectPolicyAgent):
             game.remove_piece(column=move)
 
         best_move = max(values_dict, key=values_dict.get)
-        if self.is_training:
+        if self.training:
             self.incremental_update(game=game,
                                     best_move_valuation=values_dict[best_move],
                                     best_move=best_move)
@@ -885,3 +957,6 @@ class TDAgent(DirectPolicyAgent):
                     * self.eligibility_dict[name]
                 # adding to weights
                 param += w_change
+
+        if reward == self.params["win_reward"]:
+            self.zero_eligibility()
