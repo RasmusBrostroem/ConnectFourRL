@@ -352,7 +352,7 @@ class Player():
         """
         return self.train(mode=False)
 
-    def incremental_update(self) -> None:
+    def incremental_update(self, game: connect_four) -> None:
         """Placeholder function.
 
         Returns:
@@ -923,11 +923,11 @@ class TDAgent(DirectPolicyAgent):
             game.remove_piece(column=move)
 
         best_move = max(values_dict, key=values_dict.get)
+
         return best_move
 
     def update_agent(self, optimizer=None) -> None:
-        # NOT USED
-        pass
+        del self.rewards[:]
 
     def incremental_update(self,
                            game: connect_four) -> None:
@@ -976,3 +976,4 @@ class TDAgent(DirectPolicyAgent):
                 and self.rewards[-1] != self.params["not_ended_reward"]:
             self.zero_eligibility()
             self.last_v_hat = torch.zeros((1))
+            del self.rewards[:]
