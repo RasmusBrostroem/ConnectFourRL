@@ -352,6 +352,14 @@ class Player():
         """
         return self.train(mode=False)
 
+    def incremental_update(self) -> None:
+        """Placeholder function.
+
+        Returns:
+            None
+        """
+        pass
+
 
 class DirectPolicyAgent(nn.Module, Player):
     """Extends Player() to create an agent using a neural network for playing.
@@ -821,6 +829,9 @@ class TDAgent(DirectPolicyAgent):
         self.eligibility_dict = {}
         self.zero_eligibility()
 
+        # attributes for update
+        self.last_v_hat = torch.zeros((1))
+
         # hyperparameters for update rule
         self.gamma = 0.9
         self.Lambda = 1
@@ -912,10 +923,6 @@ class TDAgent(DirectPolicyAgent):
             game.remove_piece(column=move)
 
         best_move = max(values_dict, key=values_dict.get)
-        if self.training:
-            self.incremental_update(game=game,
-                                    best_move_valuation=values_dict[best_move],
-                                    best_move=best_move)
         return best_move
 
     def update_agent(self, optimizer=None) -> None:
@@ -923,9 +930,7 @@ class TDAgent(DirectPolicyAgent):
         pass
 
     def incremental_update(self,
-                           game: connect_four,
-                           best_move_valuation: float,
-                           best_move: int) -> None:
+                           game: connect_four) -> None:
         """Update network with the fully incremental update rule.
 
         Args:
@@ -933,30 +938,36 @@ class TDAgent(DirectPolicyAgent):
             best_move_valuation (float): Value estimate of the chosen move.
             best_move (int): Column index of the chosen move.
         """
-        game.place_piece(column=best_move,
-                         piece=self.playerPiece)
-        reward = self.params["win_reward"] if game.winning_move() else 0
-        game.remove_piece(column=best_move)
+        reward = self.params["win_reward"] if self.rewards[-1]==self.params["win_reward"] else 0
 
-        # reset gradient
-        self.zero_grad()
-        # update each part of weights
-        v_hat = self.forward(x=self.represent_binary(
-            game_state=game.return_board())
-            )
-        v_hat.backward()
+        # update weights
         with torch.no_grad():
+            current_v_hat = self.forward(x=self.represent_binary(
+                game_state=game.return_board()))
             for name, param in self.named_parameters():
-                # update eligibility trace
-                self.eligibility_dict[name] = \
-                    self.gamma * self.Lambda * self.eligibility_dict[name]\
-                    + param.grad
                 # multiply with new evidence
                 w_change = self.alpha * \
-                    (reward + self.gamma*best_move_valuation - v_hat)\
+                    (reward + self.gamma*current_v_hat - self.last_v_hat)\
                     * self.eligibility_dict[name]
                 # adding to weights
                 param += w_change
 
-        if reward == self.params["win_reward"]:
+        # calculate last_v_hat and keep gradient
+        self.zero_grad()
+        # update each part of weights
+        self.last_v_hat = self.forward(x=self.represent_binary(
+            game_state=game.return_board())
+            )
+        self.last_v_hat.backward()
+
+        # update z_t with gradient
+        for name, param in self.named_parameters():
+            # update eligibility trace
+            self.eligibility_dict[name] = \
+                self.gamma * self.Lambda * self.eligibility_dict[name]\
+                + param.grad
+
+        # clean-up?
+        if self.rewards[-1] != self.params["not_ended_reward"]:
             self.zero_eligibility()
+            self.last_v_hat = torch.zeros((1))

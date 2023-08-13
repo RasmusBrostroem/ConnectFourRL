@@ -121,6 +121,9 @@ class Env():
             bool: That tells the environment if the game ended or not (true if ended, false if not)
         """
 
+        if self.currentPlayer.training:
+            self.currentPlayer.incremental_update(game=self.game)
+
         # Making current player select an action
         col_choice = self.currentPlayer.select_action(game=self.game,
                                                       illegal_moves_allowed=self.allow_illegal_moves)
@@ -173,10 +176,12 @@ class Env():
                 self.player1.calculate_rewards()
                 self.player2.calculate_rewards()
                 if self.player1.training:
+                    self.player1.incremental_update(game=self.game)
                     self.player1.update_stats()
                 else:
                     self.player1.update_benchmark_stats()
                 if self.player2.training:
+                    self.player2.incremental_update(game=self.game)
                     self.player2.update_stats()
                 else:
                     self.player2.update_benchmark_stats()
