@@ -209,6 +209,8 @@ class Env():
 
             done = self.step()
             if done:
+                if self.player1.training:
+                    self.player1.incremental_update(game=self.game)
                 self.player1.update_stats()
                 if self.display_game:
                     self.render(delay=self.params.win_screen_delay)

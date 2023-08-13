@@ -938,7 +938,11 @@ class TDAgent(DirectPolicyAgent):
             best_move_valuation (float): Value estimate of the chosen move.
             best_move (int): Column index of the chosen move.
         """
-        reward = self.params["win_reward"] if self.rewards[-1]==self.params["win_reward"] else 0
+        if self.rewards:
+            reward = self.params["win_reward"]\
+                if self.rewards[-1] == self.params["win_reward"] else 0
+        else:
+            reward = 0
 
         # update weights
         with torch.no_grad():
@@ -968,6 +972,7 @@ class TDAgent(DirectPolicyAgent):
                 + param.grad
 
         # clean-up?
-        if self.rewards[-1] != self.params["not_ended_reward"]:
+        if self.rewards \
+                and self.rewards[-1] != self.params["not_ended_reward"]:
             self.zero_eligibility()
             self.last_v_hat = torch.zeros((1))
