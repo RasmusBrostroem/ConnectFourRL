@@ -939,8 +939,7 @@ class TDAgent(DirectPolicyAgent):
             best_move (int): Column index of the chosen move.
         """
         if self.rewards:
-            reward = self.params["win_reward"]\
-                if self.rewards[-1] == self.params["win_reward"] else 0
+            reward = self.rewards[-1]
         else:
             reward = 0
 
