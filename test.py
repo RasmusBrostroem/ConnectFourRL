@@ -28,16 +28,20 @@ from time import sleep
 
 
 # player1 = TDAgent(player_piece=1)
-# player1.load_network_weights("learned_weights/player1_selftrain.pt")
 # player1.is_training = False
 # player2 = TDAgent(player_piece=-1)
 # player2.load_network_weights("learned_weights/player1_selftrain_11k.pt")
 # player2.is_training = False
 player1 = HumanPlayer(player_piece=1)
-player2 = HumanPlayer(player_piece=-1)
+#player1.load_network_weights("learned_weights/tda_stateupdate_10k.pt")
+#player1.eval()
+player2 = MinimaxAgent(player_piece=-1, max_depth=2)
+environment = Env(player1, player2, allow_illegal_moves=False)
+
+
+
 #player2 = MinimaxAgent(player_piece=-1)
 #player2 = Player(player_piece=-1)
-environment = Env(player1, player2, allow_illegal_moves=False)
 
 for i in range(1, 2):
     #environment.self_play()

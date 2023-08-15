@@ -49,13 +49,13 @@ def self_train(player1,
 
 if __name__ == "__main__":
     player1 = pl.TDAgent(player_piece=1)
-    player1.load_network_weights(filepath="learned_weights/player1_selftrain.pt")
+    # player1.load_network_weights(filepath="learned_weights/player1_selftrain.pt")
     Minimax_opp = pl.MinimaxAgent(player_piece=-1)
     Random_opp = pl.Player(player_piece=-1)
     self_train(player1=player1,
-               n_episodes=30000,
-               benchmarking_freq=500,
-               benchmark_n_games=50,
+               n_episodes=10000,
+               benchmarking_freq=100,
+               benchmark_n_games=20,
                benchmarking_opponents_list=[Minimax_opp, Random_opp],
                neptune_project_id="DLProject/ConnectFour",
-               file_name="player1_selftrain_40k")
+               file_name="tda_stateupdate_10k")

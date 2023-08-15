@@ -63,7 +63,7 @@ class Env():
                 self.display_game = True
             if event.type == pg.KEYDOWN and event.key == pg.K_z:
                 self.display_game = False
-                self.game.close_board()
+                # self.game.close_board()
 
 
     def assign_rewards(self, is_legal_move: bool) -> None:
@@ -121,6 +121,9 @@ class Env():
             bool: That tells the environment if the game ended or not (true if ended, false if not)
         """
 
+        if self.currentPlayer.training:
+            self.currentPlayer.incremental_update(game=self.game)
+
         # Making current player select an action
         col_choice = self.currentPlayer.select_action(game=self.game,
                                                       illegal_moves_allowed=self.allow_illegal_moves)
@@ -174,10 +177,12 @@ class Env():
                 self.player2.calculate_rewards()
                 if self.player1.training:
                     self.player1.update_stats()
+                    self.player1.incremental_update(game=self.game)
                 else:
                     self.player1.update_benchmark_stats()
                 if self.player2.training:
                     self.player2.update_stats()
+                    self.player2.incremental_update(game=self.game)
                 else:
                     self.player2.update_benchmark_stats()
                 if self.display_game:
@@ -205,6 +210,8 @@ class Env():
             done = self.step()
             if done:
                 self.player1.update_stats()
+                if self.player1.training:
+                    self.player1.incremental_update(game=self.game)
                 if self.display_game:
                     self.render(delay=self.params.win_screen_delay)
                 break
@@ -218,6 +225,7 @@ class Env():
         # WARNING: Make sure that benchmarking is not done in between updates
         # set in eval mode
         benchmark_player.eval()
+        opponent.playerPiece = -1 * benchmark_player.playerPiece
         opponent.eval()
         # play n_games against opponent
         bench_env = Env(player1=benchmark_player,
