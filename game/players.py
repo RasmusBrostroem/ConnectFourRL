@@ -919,7 +919,7 @@ class TDAgent(DirectPolicyAgent):
         values_dict = {}  # Initialise dictionary of move:v_hat pairs
         legal_moves = game.legal_cols()
         greedy = True if random.random() >= self.epsilon else False
-        if greedy:
+        if not self.training or greedy:
             for move in legal_moves:
                 game.place_piece(column=move, piece=self.playerPiece)
                 next_board = game.return_board()
