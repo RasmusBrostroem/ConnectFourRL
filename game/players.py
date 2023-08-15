@@ -116,6 +116,7 @@ class Player():
             "illegal_reward": -5,
             "not_ended_reward": 0,
             "gamma": 0.8,
+            "epsilon": 0,
             "device": "cpu",
             "training": True
         }
@@ -154,6 +155,7 @@ class Player():
         self.saved_log_probs = []
         self.rewards = []
         self.gamma = self.params["gamma"]
+        self.epsilon = self.params["epsilon"]
         self.training = self.params["training"]
 
     def select_action(self,
@@ -899,6 +901,9 @@ class TDAgent(DirectPolicyAgent):
                       illegal_moves_allowed: bool = False):
         """Find the move with best value estimation and update if training.
 
+        The action selection is epsilon-greedy and uses self.epsilon as the
+        epsilon value. If self.epsilon=0, the action selection will always
+        be greedy.
         Uses the fully incremental implementation as discussed in the section
         about Tesauro's TD-Backgammon in Sutton and Barto's RL-book, 2nd
         edition.
@@ -913,18 +918,21 @@ class TDAgent(DirectPolicyAgent):
         """
         values_dict = {}  # Initialise dictionary of move:v_hat pairs
         legal_moves = game.legal_cols()
-        for move in legal_moves:
-            game.place_piece(column=move, piece=self.playerPiece)
-            next_board = game.return_board()
-            binary_rep = self.represent_binary(next_board)
-            with torch.no_grad():
-                v_hat = self.forward(binary_rep)
-            values_dict[move] = v_hat
-            game.remove_piece(column=move)
+        greedy = True if random.random() >= self.epsilon else False
+        if greedy:
+            for move in legal_moves:
+                game.place_piece(column=move, piece=self.playerPiece)
+                next_board = game.return_board()
+                binary_rep = self.represent_binary(next_board)
+                with torch.no_grad():
+                    v_hat = self.forward(binary_rep)
+                values_dict[move] = v_hat
+                game.remove_piece(column=move)
 
-        best_move = max(values_dict, key=values_dict.get)
-
-        return best_move
+            best_move = max(values_dict, key=values_dict.get)
+            return best_move
+        else:
+            return random.choices(legal_moves)[0]
 
     def update_agent(self, optimizer=None) -> None:
         del self.rewards[:]
