@@ -932,7 +932,7 @@ class TDAgent(DirectPolicyAgent):
             best_move = max(values_dict, key=values_dict.get)
             return best_move
         else:
-            return random.choices(legal_moves)[0]
+            return random.choice(legal_moves)
 
     def update_agent(self, optimizer=None) -> None:
         del self.rewards[:]
