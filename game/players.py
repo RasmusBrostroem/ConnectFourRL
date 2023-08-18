@@ -352,7 +352,9 @@ class Player():
         """
         return self.train(mode=False)
 
-    def incremental_update(self, game: connect_four) -> None:
+    def incremental_update(self,
+                           game: connect_four,
+                           terminal_state: bool) -> None:
         """Placeholder function.
 
         Returns:
@@ -930,7 +932,8 @@ class TDAgent(DirectPolicyAgent):
         del self.rewards[:]
 
     def incremental_update(self,
-                           game: connect_four) -> None:
+                           game: connect_four,
+                           terminal_state: bool) -> None:
         """Update network with the fully incremental update rule.
 
         Args:
@@ -939,8 +942,7 @@ class TDAgent(DirectPolicyAgent):
             best_move (int): Column index of the chosen move.
         """
         if self.rewards:
-            reward = self.params["win_reward"]\
-                if self.rewards[-1] == self.params["win_reward"] else 0
+            reward = self.rewards[-1]
         else:
             reward = 0
 
@@ -972,8 +974,7 @@ class TDAgent(DirectPolicyAgent):
                 + param.grad
 
         # clean-up?
-        if self.rewards \
-                and self.rewards[-1] != self.params["not_ended_reward"]:
+        if terminal_state:
             self.zero_eligibility()
             self.last_v_hat = torch.zeros((1))
             del self.rewards[:]
