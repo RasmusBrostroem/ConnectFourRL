@@ -118,6 +118,7 @@ class Player():
             "gamma": 0.8,
             "alpha": 0.1,
             "Lambda": 1,
+            "epsilon": 0,
             "device": "cpu",
             "training": True
         }
@@ -158,6 +159,7 @@ class Player():
         self.gamma = self.params["gamma"]
         self.alpha = self.params["alpha"]
         self.Lambda = self.params["Lambda"]
+        self.epsilon = self.params["epsilon"]
         self.training = self.params["training"]
 
     def select_action(self,
@@ -356,7 +358,9 @@ class Player():
         """
         return self.train(mode=False)
 
-    def incremental_update(self, game: connect_four) -> None:
+    def incremental_update(self,
+                           game: connect_four,
+                           terminal_state: bool) -> None:
         """Placeholder function.
 
         Returns:
@@ -898,6 +902,9 @@ class TDAgent(DirectPolicyAgent):
                       illegal_moves_allowed: bool = False):
         """Find the move with best value estimation and update if training.
 
+        The action selection is epsilon-greedy and uses self.epsilon as the
+        epsilon value. If self.epsilon=0, the action selection will always
+        be greedy.
         Uses the fully incremental implementation as discussed in the section
         about Tesauro's TD-Backgammon in Sutton and Barto's RL-book, 2nd
         edition.
@@ -912,24 +919,28 @@ class TDAgent(DirectPolicyAgent):
         """
         values_dict = {}  # Initialise dictionary of move:v_hat pairs
         legal_moves = game.legal_cols()
-        for move in legal_moves:
-            game.place_piece(column=move, piece=self.playerPiece)
-            next_board = game.return_board()
-            binary_rep = self.represent_binary(next_board)
-            with torch.no_grad():
-                v_hat = self.forward(binary_rep)
-            values_dict[move] = v_hat
-            game.remove_piece(column=move)
+        greedy = True if random.random() >= self.epsilon else False
+        if not self.training or greedy:
+            for move in legal_moves:
+                game.place_piece(column=move, piece=self.playerPiece)
+                next_board = game.return_board()
+                binary_rep = self.represent_binary(next_board)
+                with torch.no_grad():
+                    v_hat = self.forward(binary_rep)
+                values_dict[move] = v_hat
+                game.remove_piece(column=move)
 
-        best_move = max(values_dict, key=values_dict.get)
-
-        return best_move
+            best_move = max(values_dict, key=values_dict.get)
+            return best_move
+        else:
+            return random.choice(legal_moves)
 
     def update_agent(self, optimizer=None) -> None:
         del self.rewards[:]
 
     def incremental_update(self,
-                           game: connect_four) -> None:
+                           game: connect_four,
+                           terminal_state: bool) -> None:
         """Update network with the fully incremental update rule.
 
         Args:
@@ -938,8 +949,7 @@ class TDAgent(DirectPolicyAgent):
             best_move (int): Column index of the chosen move.
         """
         if self.rewards:
-            reward = self.params["win_reward"]\
-                if self.rewards[-1] == self.params["win_reward"] else 0
+            reward = self.rewards[-1]
         else:
             reward = 0
 
@@ -971,8 +981,7 @@ class TDAgent(DirectPolicyAgent):
                 + param.grad
 
         # clean-up?
-        if self.rewards \
-                and self.rewards[-1] != self.params["not_ended_reward"]:
+        if terminal_state:
             self.zero_eligibility()
             self.last_v_hat = torch.zeros((1))
             del self.rewards[:]

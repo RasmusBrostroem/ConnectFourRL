@@ -122,7 +122,8 @@ class Env():
         """
 
         if self.currentPlayer.training:
-            self.currentPlayer.incremental_update(game=self.game)
+            self.currentPlayer.incremental_update(game=self.game,
+                                                  terminal_state=False)
 
         # Making current player select an action
         col_choice = self.currentPlayer.select_action(game=self.game,
@@ -177,12 +178,14 @@ class Env():
                 self.player2.calculate_rewards()
                 if self.player1.training:
                     self.player1.update_stats()
-                    self.player1.incremental_update(game=self.game)
+                    self.player1.incremental_update(game=self.game,
+                                                    terminal_state=True)
                 else:
                     self.player1.update_benchmark_stats()
                 if self.player2.training:
                     self.player2.update_stats()
-                    self.player2.incremental_update(game=self.game)
+                    self.player2.incremental_update(game=self.game,
+                                                    terminal_state=True)
                 else:
                     self.player2.update_benchmark_stats()
                 if self.display_game:
@@ -211,7 +214,8 @@ class Env():
             if done:
                 self.player1.update_stats()
                 if self.player1.training:
-                    self.player1.incremental_update(game=self.game)
+                    self.player1.incremental_update(game=self.game,
+                                                    terminal_state=True)
                 if self.display_game:
                     self.render(delay=self.params.win_screen_delay)
                 break
