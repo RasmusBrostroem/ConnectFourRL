@@ -116,6 +116,8 @@ class Player():
             "illegal_reward": -5,
             "not_ended_reward": 0,
             "gamma": 0.8,
+            "alpha": 0.1,
+            "Lambda": 1,
             "epsilon": 0,
             "device": "cpu",
             "training": True
@@ -155,6 +157,8 @@ class Player():
         self.saved_log_probs = []
         self.rewards = []
         self.gamma = self.params["gamma"]
+        self.alpha = self.params["alpha"]
+        self.Lambda = self.params["Lambda"]
         self.epsilon = self.params["epsilon"]
         self.training = self.params["training"]
 
@@ -835,11 +839,6 @@ class TDAgent(DirectPolicyAgent):
 
         # attributes for update
         self.last_v_hat = torch.zeros((1))
-
-        # hyperparameters for update rule
-        self.gamma = 0.9
-        self.Lambda = 1
-        self.alpha = 0.1
 
     def zero_eligibility(self):
         for name, param in self.named_parameters():
