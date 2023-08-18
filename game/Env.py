@@ -250,7 +250,8 @@ class Env():
                 opponent_name=opponent.__class__.__name__)
         else:
             print(
-                f"Results of benchmark against {opponent.__class__.__name__}"
+                f"Results of {benchmark_player_name} against" +
+                f" {opponent.__class__.__name__}"
                 )
             wins = benchmark_player.benchmark_stats["wins"]
             games = benchmark_player.benchmark_stats["games"]

@@ -128,3 +128,20 @@ def train(player1,
     if neptune_project_id:
         run.stop()
     print("Training completed.")
+
+
+if __name__ == "__main__":
+    player1 = pl.TDAgent(player_piece=1,
+                         epsilon=0.1,
+                         alpha=0.01,
+                         loss_reward=-0.1)
+    player2 = pl.MinimaxAgent(player_piece=-1, training=False)
+    Minimax_opp = pl.MinimaxAgent(player_piece=-1)
+    Random_opp = pl.Player(player_piece=-1)
+    train(player1=player1,
+          player2=player2,
+          player1_filename="TD_v_minimax_2k",
+          benchmarking_opponents_list=[Minimax_opp, Random_opp],
+          save_benchmark_against="MinimaxAgent",
+          save_benchmark_threshold=0.4,
+          neptune_project_id="")
