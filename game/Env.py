@@ -225,6 +225,10 @@ class Env():
                   benchmark_player,
                   opponent,
                   n_games,
+                  benchmark_player_name,
+                  benchmark_player_optim,
+                  save_threshold,
+                  save_against="",
                   neptune_run=None) -> None:
         # WARNING: Make sure that benchmarking is not done in between updates
         # set in eval mode
@@ -251,12 +255,26 @@ class Env():
             wins = benchmark_player.benchmark_stats["wins"]
             games = benchmark_player.benchmark_stats["games"]
             print(f"Win-rate: {wins/games*100} % (in {games} games).")
-            # if no neptune_run, reset stats (else done in log_benchmark)
-            benchmark_player.benchmark_stats = dict.fromkeys(
-                benchmark_player.benchmark_stats, 0
-                )
+
+        winrate = benchmark_player.benchmark_stats["wins"] / \
+            benchmark_player.benchmark_stats["games"]
+        if save_against:
+            if save_against == opponent.__class__.__name__ and\
+              winrate > benchmark_player.benchmark_stats["best_winrate"] and\
+              winrate > save_threshold:
+                file_name = benchmark_player_name + \
+                    f"benchmark_WR_{str(winrate).replace('.', 'p')}"
+                benchmark_player.save_agent(
+                    file_name=file_name,
+                    optimiser=benchmark_player_optim)
+                benchmark_player.benchmark_stats["best_winrate"] = winrate
 
         # clean-up
+        # reset benchmark results
+        for stat in benchmark_player.benchmark_stats.keys():
+            if stat != "best_winrate":
+                benchmark_player.benchmark_stats[stat] = 0
+
         # delete rewards and log probs
         # NOTE: this results in issues for some updating rules, if
         # benchmarking is performed between updates
