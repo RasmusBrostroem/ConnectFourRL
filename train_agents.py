@@ -1,3 +1,26 @@
+"""Define the logic for training against other player or through self-play.
+
+This script implements a training function which can be used for the following
+training strategies:
+  - let 2 players play against each other, both of them learning
+  - let 2 players play against each other, with only player1 learning. The
+    opponent can be any Player object.
+  - let 1 player train by playing against itself.
+The training function optionally logs to neptune and saves the resulting
+learned weights.
+
+Defines the following function:
+    - train: Trains 1 or 2 players using the specified optimizers, logs to the
+        specified Neptune project and saves the resulting network(s).
+        Returns None.
+
+If run as __main__:
+    Runs 2000 episodes of 1 players.TDAgent in self-play, benchmarking at each
+    100 games by playing 20 games against both a random player and a minimax
+    player. Logs to the Neptune project "DLProject/ConnectFour" (change this
+    for your own project) and saves the network if the win-rate against the
+    minimax opponent exceeds 0.4, as well as at the end of the training.
+"""
 import game.players as pl
 from game.Env import Env
 import neptune
@@ -34,9 +57,10 @@ def train(player1,
         player1 (game.players.Player or subclass): Player 1 object. Must
          extend methods for game.players.Player in order to interact
          correctly with the environment, ie. can also be human or random.
-        player2 (game.players.Player or subclass): Player 2 object. Must
-         extend methods for game.players.Player in order to interact
+        player2 (game.players.Player or subclass or None): Player 2 object.
+         Must extend methods for game.players.Player in order to interact
          correctly with the environment, ie. can also be human or random.
+         If None, player1 will be trained in self-play using Env.self_play().
        optimizer_player1: Optimizer object for player 1. Must be one of the
         classes defined in torch.optim or None.
         optimizer_player2: Optimizer object for player 2. Must be one of the
