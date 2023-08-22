@@ -232,8 +232,8 @@ class Env():
                   neptune_run=None) -> None:
         """Test benchmark_player against opponent in n_games and log results.
 
-        Should not be called in between updates of agents, as it the rewards
-        and saved_log_probs lists.
+        Should not be called in between updates of agents, as it deletes the
+        rewards and saved_log_probs lists.
         Optionally saves network weights if opponent class name matches
         save_against and the win-rate against this opponent both exceeds
         save_threshold and previously best win-rate stored in the
@@ -252,7 +252,7 @@ class Env():
             benchmark_player_name (str): Name to use for saving.
              "_benchmark_WR_0pyyy.pt" is added to the filename, where 0pyyy is
              the achieved win-rate rounded to 3 decimal points and p denotes
-             the decimal point. The win-rate is between 0 and 1.         
+             the decimal point. The win-rate is between 0 and 1.
             benchmark_player_optim: Optimizer object for the benchmark player.
              Must be one of the classes defined in torch.optim or None. Only
              used when saving.
