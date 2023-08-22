@@ -259,16 +259,15 @@ class Env():
 
         winrate = benchmark_player.benchmark_stats["wins"] / \
             benchmark_player.benchmark_stats["games"]
-        if save_against:
-            if save_against == opponent.__class__.__name__ and\
-              winrate > benchmark_player.benchmark_stats["best_winrate"] and\
-              winrate > save_threshold:
-                file_name = benchmark_player_name + \
-                    f"benchmark_WR_{str(winrate).replace('.', 'p')}"
-                benchmark_player.save_agent(
-                    file_name=file_name,
-                    optimiser=benchmark_player_optim)
-                benchmark_player.benchmark_stats["best_winrate"] = winrate
+        if save_against == opponent.__class__.__name__ and\
+            winrate > benchmark_player.benchmark_stats["best_winrate"] and\
+                winrate > save_threshold:
+            file_name = benchmark_player_name + \
+                f"benchmark_WR_{str(winrate).replace('.', 'p')}"
+            benchmark_player.save_agent(
+                file_name=file_name,
+                optimiser=benchmark_player_optim)
+            benchmark_player.benchmark_stats["best_winrate"] = winrate
 
         # clean-up
         # reset benchmark results
