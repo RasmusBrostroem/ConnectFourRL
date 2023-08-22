@@ -16,38 +16,74 @@ def train(player1,
           benchmarking_opponents_list=[],
           benchmark_n_games=20,
           save_benchmark_against="",
-          save_benchmark_threshold=0,
+          save_benchmark_threshold=0.0,
           neptune_project_id=""):
-    """_summary_
+    """Train player1 against player2 (or self-play), benchmark, save results.
+
+    Can benchmark against several player classes, but saving based on
+    performance is only implemented towards one of the opponents. This
+    opponent should be the only one of its class, as it is the class name
+    (provided with save_benchmark_against) which determines the saving based
+    on the win-rate.
+    The .training attribute of the player objects must be set correctly prior
+    to training. Player2 will not get updated or benchmarked if
+    player2.training=False.
+
 
     Args:
-        player1 (_type_): _description_
-        player2 (_type_): _description_
-        player1_optimizer (_type_, optional): _description_. Defaults to None.
-        player2_optimizer (_type_, optional): _description_. Defaults to None.
-        player1_filename (str, optional): _description_. Defaults to "player1".
-        player2_filename (str, optional): _description_. Defaults to "player2".
-        n_episodes (int, optional): _description_. Defaults to 2000.
-        batch_size (int, optional): _description_. Defaults to 0.
+        player1 (game.players.Player or subclass): Player 1 object. Must
+         extend methods for game.players.Player in order to interact
+         correctly with the environment, ie. can also be human or random.
+        player2 (game.players.Player or subclass): Player 2 object. Must
+         extend methods for game.players.Player in order to interact
+         correctly with the environment, ie. can also be human or random.
+       optimizer_player1: Optimizer object for player 1. Must be one of the
+        classes defined in torch.optim or None.
+        optimizer_player2: Optimizer object for player 2. Must be one of the
+         classes defined in torch.optim or None. Unused if player2=None.
+        player1_filename (str, optional): Filename to use for saving network
+         weights of player1. Do not include file extension. If saved after a
+         benchmark during training, it will be changed following the logic in
+         Env.benchmark(). When saving at the end of training, "_final" will be
+         added to the file name. Defaults to "player1".
+        player2_filename (str, optional): Filename to use for saving network
+         weights of player2. Unused if player2=None, but apart from that its
+         usage is the same as player1_filename. Defaults to "player2".
+        n_episodes (int, optional): Total number of games to play.
+         Defaults to 2000.
+        batch_size (int, optional): Number of games to play in between
+         updates. If the agent(s) to train are implemented with incremental
+         updates (e.g. as TDAgent), then set this to 0. Defaults to 0.
         benchmarking_freq (int, optional): Number of games to play between
-            benchmarks. Defaults to 100.
-        benchmarking_opponents_list (list, optional): _description_.
-            Defaults to [].
-        benchmark_n_games (int, optional): _description_. Defaults to 20.
-        save_benchmark_against (str, optional): Save . as soon as value exceeds... . Defaults to "".
-        neptune_project_id (str, optional): _description_. Defaults to "".
+         benchmarks. Benchmarking should occur immediately after network
+         updates, and hence should be a multiple of batch_size unless this is
+         0. Defaults to 100.
+        benchmarking_opponents_list (list, optional): List of player objects
+         to benchmark against. Defaults to [].
+        benchmark_n_games (int, optional): Number of games to play against
+         each of the benchmarking opponents. Defaults to 20.
+        save_benchmark_against (str, optional): Class name of one of the
+         benchmarking opponnents. The win-rate against this opponent will then
+         be tracked and network weights will be saved when performance
+         improves. If "", does not save. Defaults to "".
+        save_benchmark_threshold (float, optional): Minimal win-rate required
+         to save network weights based on benchmarking performance. Once the
+         minimal win-rate has been exceeded, the network will only be saved
+         when it exceeds the previously best performance. Defaults to 0.0.
+        neptune_project_id (str, optional): Project id for the Neptune project
+         for logging. If "", does not log or initialise any Neptune run.
+         Defaults to "".
 
     Returns:
-        _type_: _description_
+        None
     """
-    # TODO: Make it explicit that players' training flag needs to be set correctly
     assert len(player1_filename.split(".")) == 1,\
         "player1_filename includes file extension, please exclude it."
     assert len(player2_filename.split(".")) == 1,\
         "player2_filename includes file extension, please exclude it."
     if batch_size != 0:
         assert n_episodes % batch_size == 0,\
-            "batch_size is not a multiple of n_episodes."
+            "n_episodes is not a multiple of batch_size."
         assert benchmarking_freq % batch_size == 0,\
             "benchmarking_freq needs to be a multiple of batch_size."
 
@@ -93,8 +129,8 @@ def train(player1,
             if player2 and player2.training:
                 player2.update_agent(optimizer=player2_optimizer)
             print_status(episode_i=episode,
-                           n_episodes=n_episodes,
-                           start_time=start_time)
+                         n_episodes=n_episodes,
+                         start_time=start_time)
             if episode % benchmarking_freq == 0:
                 print("Benchmarking...")
                 for opponent in benchmarking_opponents_list:
@@ -120,7 +156,7 @@ def train(player1,
                 print("Benchmarking done, resuming training.")
 
     player1.save_agent(file_name=player1_filename + "_final",
-                       optimizer=player2_optimizer)
+                       optimizer=player1_optimizer)
     if player2:
         player2.save_agent(file_name=player2_filename + "_final",
                            optimizer=player2_optimizer)
