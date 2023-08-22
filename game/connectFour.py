@@ -57,26 +57,6 @@ class connect_four():
                                    (circle_x_center, circle_y_center),
                                    radius)
 
-        # Draw the result if there is one
-        # if self.winning_move():
-        #     text = f"Player {2 if self.player == -1 else self.player} won!"
-        #     font_size = min(((self.size-10)/len(text)/0.6), square_size/1.16)
-        #     myfont = pg.font.SysFont("monospace", int(font_size))
-        #     label = myfont.render(text, 1, yellow)
-        #     screen.blit(label, (self.size/2-label.get_width()/2,square_size/2-label.get_height()/2))
-        # elif self.is_tie():
-        #     text = "TIE!"
-        #     font_size = min(((self.size-10)/len(text)/0.6), square_size/1.16)
-        #     myfont = pg.font.SysFont("monospace", int(font_size))
-        #     label = myfont.render(text, 1, blue)
-        #     screen.blit(label, (self.size/2-label.get_width()/2,square_size/2-label.get_height()/2))
-        # elif self.is_legal():
-        #     text = "Agent illegal move!"
-        #     font_size = min(((self.size-10)/len(text)/0.6), square_size/1.16)
-        #     myfont = pg.font.SysFont("monospace", int(font_size))
-        #     label = myfont.render(text, 1, red)
-        #     screen.blit(label, (self.size/2-label.get_width()/2,square_size/2-label.get_height()/2))
-
         pg.display.update()
 
     def draw_translucent_piece(self, column, player_piece) -> None:
@@ -224,27 +204,3 @@ class connect_four():
             3. If the player makes an illegal move
         '''
         return not is_legal_move or self.winning_move() or self.is_tie()
-
-    # def evaluate(self, player: int, legal: bool):
-    #     '''
-    #     Evaluates current state and returns a reward. Note: only makes sense for player with id 1.
-    #     The reward is based on the system the evaluate attributes
-
-    #     Input
-    #         - player (int): Which player is evaluated
-    #         - legal (bool): if the move leading to this state was legal
-    #     Output
-    #         - Reward (float): One of the evaluate attributes or 0 if the game
-    #                             wasn't decided on previous move
-    #     '''
-    #     if not legal:
-    #         return self.illegal
-    #     elif self.winning_move():
-    #         if player == 1:
-    #             return self.win
-    #         else:
-    #             return self.loss
-    #     elif self.is_tie():
-    #         return self.tie
-    #     else:
-    #         return 0
