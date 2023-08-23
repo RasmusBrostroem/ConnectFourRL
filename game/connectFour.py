@@ -1,9 +1,72 @@
+"""This module provides a class which implements the game of Connect Four.
+
+It defines the class connect_four(), implementing methods for displaying,
+playing and ending (that is, determining end states) of the game.
+
+This module depends only on pygame and numpy. However, if you wish to use the
+implementation for machine learning purposes, you are encouraged to reference
+our two other modules, players and Env, which respectively implement a
+learning environment as well as classes for interacting with it.
+Please refer to the README.md for instructions on installing dependencies.
+"""
+
 import pygame as pg
 import numpy as np
 
 
 class connect_four():
+    """Implements the game of Connect Four.
+
+    Provides a representation of the game state, methods for displaying and
+    interacting with it as well as methods for determining end states and
+    legal moves.
+
+    Attributes:
+        size: Length and width of the quadratical display in pixels.
+        rows: Number of rows on the game board.
+        columns: Number of columns on the game board.
+        board: Matrix representation of the game board. Internally, the game
+         representation is flipped vertically from how one would normally
+         represent it, meaning that it is filled from top to bottom. This
+         follows the numpy convention that the uppermost row is indexed as 0.
+         The method return_board() flips the board before returning it, such
+         that the top of the matrix corresponds to the top of the board.
+         The value 0 indicates an empty spot. 1 and -1 are the valid values
+         for player pieces.
+        screen: pygame display object for showing the board in a window.
+
+    Methods:
+        Display the board
+            draw_board: Displays the board in the screen.
+            draw_translucent_piece: Draw translucent piece on mouse hover.
+            remove_translucent_piece: Remove drawing of said piece.
+            close_board: Close the pygame window.
+
+        Modify the board
+            place_piece: Place a piece in a column.
+            remove_piece: Remove a piece from a column.
+            restart: Reset all entries to 0, indicating an empty board.
+
+        Logical checks of the game state
+            is_legal: Check if a piece can be placed in a specified column.
+            legal_cols: Return a list of legal columns.
+            winning_move: Check if the board has a winner.
+            is_tie: Check if the board has a tie.
+            is_done: Check if board is in an end state.
+        
+        return_board: Return a flipped copy of the board.
+
+    """
     def __init__(self, _size=700, _rows=6, _columns=7):
+        """Initialise a new connect_four object.
+
+        Args:
+            _size (int, optional): Dimension of the (quadratical) display
+             window in pixels. Defaults to 700.
+            _rows (int, optional): Number of rows in the board. Defaults to 6.
+            _columns (int, optional): Number of columns in the board. Defaults
+             to 7.
+        """
         # The attributes to display the game
         pg.init()
         self.size = _size
@@ -14,9 +77,11 @@ class connect_four():
         self.screen = None
 
     def draw_board(self):
-        '''
-        Draws the current state of the board
-        '''
+        """Draws the current state of the board.
+
+        Player with playerPiece=1 will be yellow, player with playerPiece=-1
+        will be red.
+        """
         black = (0, 0, 0)
         blue = (0, 0, 255)
         red = (255, 0, 0)
@@ -59,10 +124,13 @@ class connect_four():
 
         pg.display.update()
 
-    def draw_translucent_piece(self, column, player_piece) -> None:
-        '''
-        Draw a translucent piece in the specified column.
-        '''
+    def draw_translucent_piece(self, column: int, player_piece: int) -> None:
+        """Draw a translucent piece in the specified column.
+
+        Args:
+            column (int): The column in which to place the translucent piece.
+            player_piece (int): The player piece to place, either 1 or -1.
+        """
         red = (255, 0, 0, 128)
         yellow = (255, 255, 0, 128)
         square_size = min(np.ceil(self.size / self.columns),
@@ -87,7 +155,12 @@ class connect_four():
                          (circle_x_center - radius, circle_y_center - radius))
         pg.display.update()
 
-    def remove_translucent_piece(self, column) -> None:
+    def remove_translucent_piece(self, column: int) -> None:
+        """Remove a translucent piece from the top of the specified column.
+
+        Args:
+            column (int): The column from which to remove a translucent piece.
+        """
         square_size = min(np.ceil(self.size / self.columns),
                           np.ceil(self.size / self.rows))
         radius = int(square_size / 2 - 5)
@@ -104,49 +177,33 @@ class connect_four():
         pg.display.update()
 
     def close_board(self) -> None:
+        """Shut down the display window."""
         pg.display.quit()
 
     def return_board(self) -> None:
-        '''
-        Returns the current state of the board as a copy of the board,
-        such that no changes are made to the actual board.
-        '''
+        """Return a copy of the current board where row 0 is the top row."""
         return np.copy(np.flip(self.board, 0))
 
     def is_legal(self, column: int) -> bool:
-        '''
-        Checks for legal move returns a boolean
-        Returns true if the move was legal and false if not
-        '''
+        """Return True if a piece can be placed in column, False if not."""
         return self.board[self.rows-1][column] == 0
 
     def place_piece(self, column: int, piece: int) -> None:
-        '''
-        Places the player value into the column at the highest available row.
-
-        Changes the board attribute for game.
-        '''
+        """In-place modify self.board by placing piece in column."""
         for i, row in enumerate(self.board):
             if row[column] == 0:
                 self.board[i][column] = piece
                 break
 
     def remove_piece(self, column: int) -> None:
-        """Remove the top piece of the board from the specified column.
-
-        Args:
-            column (int): Index of column where top piece should be removed.
-        """
+        """In-place modify self.board by removing top piece from column."""
         for i, row in enumerate(np.flip(self.board, 0)):
             if row[column] != 0:
                 self.board[self.rows - i - 1][column] = 0
                 break
 
     def winning_move(self) -> bool:
-        '''
-        Checks if the board has a winner and returns boolean
-        Returns true if player a player made the winning move and false if not
-        '''
+        """Return True if self.board has a winner, False if not."""
         # Check horizontal locations for win
         for c in range(self.columns-3):
             for r in range(self.rows):
@@ -176,31 +233,26 @@ class connect_four():
         return False
 
     def is_tie(self) -> bool:
-        '''
-        Checks if the game is a tie, returns a boolean
-        Returns true if the game is a tie, and false if not
-        '''
+        """Return True if the game is a tie, return False if not."""
         return all([val != 0 for val in self.board[self.rows-1]])
 
     def legal_cols(self) -> list:
-        '''
-        Checks which columns are legal to place a piece in.
-        Returns the legal columns in a list
-        '''
+        """Return a list of column indexes where a piece can be placed."""
         return [c for c, val in enumerate(self.board[self.rows-1]) if val == 0]
 
     def restart(self):
-        '''
-        Restarts the game by setting all entries in board to 0
-        '''
+        """In-place modify self.board by resetting all values to 0."""
         self.board *= 0
 
     def is_done(self, is_legal_move: bool) -> bool:
-        '''
-        Checks if the game is done and returns a boolean.
-        The game can end in three ways:
-            1. If the player makes the winning move
-            2. If the player makes a move that ties the players
-            3. If the player makes an illegal move
-        '''
+        """Return True if the game is finished, False if not.
+
+        Args:
+            is_legal_move (bool): Indicate whether the last move is legal.
+             If it was illegal, the method will return False.
+
+        Returns:
+            bool: True if game has finished due to illegal move, winning move
+             or a tieing move.
+        """
         return not is_legal_move or self.winning_move() or self.is_tie()
