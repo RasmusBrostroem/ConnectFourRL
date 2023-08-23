@@ -53,7 +53,7 @@ class connect_four():
             winning_move: Check if the board has a winner.
             is_tie: Check if the board has a tie.
             is_done: Check if board is in an end state.
-        
+
         return_board: Return a flipped copy of the board.
 
     """
