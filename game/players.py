@@ -182,19 +182,9 @@ class Player():
         return random.choice(game.legal_cols())
 
     def calculate_rewards(self) -> None:
-        """Calculate the discounted rewards for each move the player made.
-
-        This method should be called at the end of an episode.
-
-        Returns: None.
+        """Placerholder function for reward calculation at end of episode.
         """
-        final_reward = self.rewards[-1]
-        for i, val in enumerate(reversed(self.rewards)):
-            if val != 0 and i != 0:
-                break
-
-            weighted_reward = self.gamma**i * final_reward
-            self.rewards[len(self.rewards)-(i+1)] = weighted_reward
+        pass
 
     def update_agent(self, optimizer=None) -> None:
         """Placeholder method for updating agent parameters and resetting.
@@ -445,6 +435,21 @@ class DirectPolicyAgent(nn.Module, Player):
         self.saved_log_probs.append(move.log_prob(action))
         self.probs.append(probs[action].detach().numpy())
         return action.to("cpu")
+
+    def calculate_rewards(self) -> None:
+        """Calculate the discounted rewards for each move the player made.
+
+        This method should be called at the end of an episode.
+
+        Returns: None.
+        """
+        final_reward = self.rewards[-1]
+        for i, val in enumerate(reversed(self.rewards)):
+            if val != 0 and i != 0:
+                break
+
+            weighted_reward = self.gamma**i * final_reward
+            self.rewards[len(self.rewards)-(i+1)] = weighted_reward
 
     def update_agent(self, optimizer) -> None:
         """Update network parameters by backpropagating using the optimizer.
