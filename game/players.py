@@ -150,7 +150,8 @@ class Player():
             "losses": 0,
             "ties": 0,
             "illegals": 0,
-            "games": 0
+            "games": 0,
+            "best_winrate": 0
         }
 
         # Parameters used for updating agent
@@ -319,9 +320,6 @@ class Player():
             self.benchmark_stats["ties"]/self.benchmark_stats["games"])
         neptune_run[folder_name + "/illegalrate_" + opponent_name].log(
             self.benchmark_stats["illegals"]/self.benchmark_stats["games"])
-
-        # Sets all values back to 0
-        self.benchmark_stats = dict.fromkeys(self.benchmark_stats, 0)
 
     def train(self, mode: bool = True):
         """Configure the training mode of the player.

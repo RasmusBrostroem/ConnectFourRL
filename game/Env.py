@@ -224,9 +224,50 @@ class Env():
     def benchmark(self,
                   benchmark_player,
                   opponent,
-                  n_games,
+                  n_games: int,
+                  benchmark_player_name: str,
+                  benchmark_player_optim,
+                  save_threshold: float,
+                  save_against: str = "",
                   neptune_run=None) -> None:
-        # WARNING: Make sure that benchmarking is not done in between updates
+        """Test benchmark_player against opponent in n_games and log results.
+
+        Should not be called in between updates of agents, as it deletes the
+        rewards and saved_log_probs lists.
+        Optionally saves network weights if opponent class name matches
+        save_against and the win-rate against this opponent both exceeds
+        save_threshold and previously best win-rate stored in the
+        player.benchmark_stats["best_winrate"].
+        If a neptune_run is provided, the results will be logged using
+        benchmark_player.log_benchmark(). Otherwise, the results of the
+        benchmarking will be printed to console.
+        Note: Both player objects are reset to train-mode after benchmarking.
+
+        Args:
+            benchmark_player (game.players.Player or subclass): The player
+             object to benchmark.
+            opponent (game.players.Player or subclass): The player
+             object to play against in the benchmark.
+            n_games (int): Number of games to play.
+            benchmark_player_name (str): Name to use for saving.
+             "_benchmark_WR_0pyyy.pt" is added to the filename, where 0pyyy is
+             the achieved win-rate rounded to 3 decimal points and p denotes
+             the decimal point. The win-rate is between 0 and 1.
+            benchmark_player_optim: Optimizer object for the benchmark player.
+             Must be one of the classes defined in torch.optim or None. Only
+             used when saving.
+            save_threshold (float): Minimal win-rate required
+             to save network weights based on benchmarking performance. Once
+             the minimal win-rate has been exceeded, the network will only be
+             saved when it exceeds the previously best performance.
+            save_against (str, optional): Class name of one of the
+             benchmarking opponnents. The win-rate against this opponent will
+             then be tracked and network weights will be saved when performance
+             improves. If "", does not save. Defaults to "".
+            neptune_run (neptune run object or None, optional): Object of the
+             neptune run currently used for logging. If None, the benchmarking
+             results are instead printed to console. Defaults to None.
+        """
         # set in eval mode
         benchmark_player.eval()
         opponent.playerPiece = -1 * benchmark_player.playerPiece
@@ -246,17 +287,32 @@ class Env():
                 opponent_name=opponent.__class__.__name__)
         else:
             print(
-                f"Results of benchmark against {opponent.__class__.__name__}"
+                f"Results of {benchmark_player_name} against" +
+                f" {opponent.__class__.__name__}"
                 )
             wins = benchmark_player.benchmark_stats["wins"]
             games = benchmark_player.benchmark_stats["games"]
             print(f"Win-rate: {wins/games*100} % (in {games} games).")
-            # if no neptune_run, reset stats (else done in log_benchmark)
-            benchmark_player.benchmark_stats = dict.fromkeys(
-                benchmark_player.benchmark_stats, 0
-                )
+
+        winrate = benchmark_player.benchmark_stats["wins"] / \
+            benchmark_player.benchmark_stats["games"]
+        if save_against == opponent.__class__.__name__ and\
+            winrate > benchmark_player.benchmark_stats["best_winrate"] and\
+                winrate > save_threshold:
+            winrate_rounded = round(winrate, 3)
+            file_name = benchmark_player_name + \
+                f"_benchmark_WR_{str(winrate_rounded).replace('.', 'p')}"
+            benchmark_player.save_agent(
+                file_name=file_name,
+                optimiser=benchmark_player_optim)
+            benchmark_player.benchmark_stats["best_winrate"] = winrate
 
         # clean-up
+        # reset benchmark results
+        for stat in benchmark_player.benchmark_stats.keys():
+            if stat != "best_winrate":
+                benchmark_player.benchmark_stats[stat] = 0
+
         # delete rewards and log probs
         # NOTE: this results in issues for some updating rules, if
         # benchmarking is performed between updates
