@@ -14,6 +14,8 @@ Defines the following classes:
     - HumanPlayer(): Allows the user to play the game through console input.
     - MinimaxAgent(): Implements the minimax algorithm for Connect Four.
         Uses this to decide where to place pieces.
+    - TDAgent(): Implements the TD(Lambda) algorithm with inspiration from
+        Tesauro's TDGammon-player.
 
 This module has several dependencies. We recommend creating a virtual
 environment from our requirements.txt file to ensure compatibility and optimal
@@ -38,7 +40,7 @@ class Player():
 
     The class provides methods for selecting a column to place a piece in,
     updating statistics and rewards for the player, and logging performance
-    metrics to Neptune.
+    metrics and benchmark metrics to Neptune.
     The class acts as a template class and contains all the methods and
     attributes a player class should provide to correctly interact with our
     implementation of Connect Four. Our implemented environment assumes that
@@ -57,15 +59,22 @@ class Player():
                 all training runs).
             probs: List of probability for each chosen move.
 
+        Benchmarking:
+            benchmark_stats: Dictionary of performance in current benchmarking.
+
         Updating/learning:
             saved_log_probs: List of log(probability) for each chosen move.
             rewards: List of rewards received for each move in the episode.
             gamma: Discount factor used for calculating rewards.
+            epsilon: epsilon-value for epsilon-greedy strategies.
+            alpha: step-size/learning-rate for updating rules.
+            Lambda: Lambda parameter needed by TD(Lambda)-algorithm, TDAgent.
+            training: boolean flag indicating if agent is in training mode.
 
     Methods:
         select_action(game, legal_moves=[]): Decide (randomly) where to place
             the next piece.
-        calculate_rewards(): Calculates discounted rewards at end of episode.
+        calculate_rewards(): Placeholder for discounting rewards in an episode.
         update_agent(optimizer=None): Placeholder for updating network
             weights.
         load_network_weights(*args, **kwargs): Placeholder method that can be
@@ -77,6 +86,13 @@ class Player():
         log_params(neptune_run): Log player parameters to Neptune experiment.
         log_stats(neptune_run): Log performance metrics to a Neptune
             experiment.
+        update_benchmark_stats(): Use rewards list to update benchmarking
+            stats based on outcome of a game.
+        log_benchmark_stats(neptune_run, opponent_name): Log benchmarking
+            metrics to a Neptune experiment.
+        train(mode): Set training flag to mode.
+        eval(): Set player to evaluation mode.
+        incremental_update(): Placeholder for TD(Lambda) algorithm.
 
 
     When extending the class, it will usually be sufficient to overwrite the
@@ -295,6 +311,7 @@ class Player():
         self.stats = dict.fromkeys(self.stats, 0)  # Sets all values back to 0
 
     def update_benchmark_stats(self):
+        """Update benchmark metrics with the outcome of a game."""
         # NOTE: should be called after each separate benchmarking game
         final_reward = self.rewards[-1]
 
@@ -309,6 +326,16 @@ class Player():
             self.benchmark_stats["illegals"] += 1
 
     def log_benchmark(self, neptune_run: neptune.Run, opponent_name: str):
+        """Log benchmarking metrics from self.benchmark_stats to Neptune.
+
+        Logs the winrate, lossrate, tierate and illegal rate stored in the
+        dictionary. They are logged using opponent_name to indicate against
+        which opponent they were achieved.
+
+        Args:
+            neptune_run (neptune.Run): Instance of the current neptune run.
+            opponent_name (str): The name of opponent to be used for saving.
+        """
         # NOTE: assumes all games in self.benchmark_stats were played against
         # opponent_name
         folder_name = f"player{self.playerPiece}/benchmarks"
